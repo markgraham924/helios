@@ -13,7 +13,8 @@ ask it to, and talks to nothing but your own Home Assistant.
 ## What it does
 
 - **Dashboard from Home Assistant.** A 4x3 grid of tiles - a clock, weather, a
-  music tile and a generic `tile` for an entity of any domain - described in the
+  music tile, a generic `tile` for an entity of any domain, and an `entities`
+  card with 1-3 readings and their units - described in the
   `helios` section of a Lovelace dashboard. Saving the YAML re-renders the clock;
   no new APK. Tiles can be conditional on any HA entity state, carry any icon
   from the bundled Material Design Icons set, and a document can hold several

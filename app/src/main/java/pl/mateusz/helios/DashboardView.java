@@ -269,6 +269,8 @@ public final class DashboardView extends FrameLayout {
         final IconView icon;
         final IconView valueIcon; // BIG_FIT only: the icon in front of the big value, null for every other layout
         final TextView title,value,detail,detail2;
+        final LinearLayout readings;
+        final List<TextView> readingLabels=new ArrayList<>(),readingValues=new ArrayList<>();
         final ProgressBar spinner;
         final boolean clock;
         float unitW,unitH;
@@ -308,6 +310,19 @@ public final class DashboardView extends FrameLayout {
             if(shownIcon==null)icon.setVisibility(GONE);
             detail=line(sans,1);column.addView(detail);
             detail2=line(sans,1);column.addView(detail2);detail2.setVisibility(GONE);
+            readings=def.layout==CardDefinition.Layout.ROWS?new LinearLayout(getContext()):null;
+            if(readings!=null){
+                readings.setOrientation(LinearLayout.VERTICAL);column.addView(readings);
+                value.setVisibility(GONE);detail.setVisibility(GONE);
+                for(int n=0;n<item.entries.size();n++){
+                    LinearLayout row=new LinearLayout(getContext());row.setOrientation(LinearLayout.HORIZONTAL);
+                    TextView labelText=line(sans,1),reading=line(sans,1);
+                    labelText.setGravity(Gravity.CENTER_VERTICAL);reading.setGravity(Gravity.END|Gravity.CENTER_VERTICAL);
+                    row.addView(labelText,new LinearLayout.LayoutParams(0,-1,1));
+                    row.addView(reading,new LinearLayout.LayoutParams(-2,-1));
+                    readings.addView(row);readingLabels.add(labelText);readingValues.add(reading);
+                }
+            }
             spinner=new ProgressBar(getContext());spinner.setIndeterminate(true);spinner.setVisibility(GONE);addView(spinner,new LayoutParams(-2,-2,Gravity.TOP|Gravity.END));
             // The type's own word ("Pogoda") is not worth a line above a tile that already shows a weather icon;
             // a title someone wrote in the YAML still shows. The description keeps the word either way.
@@ -329,6 +344,8 @@ public final class DashboardView extends FrameLayout {
             else setBackground(Theme.card(surface(t),r));
             title.setTextColor(attention?Theme.ATTENTION:t.muted);detail.setTextColor(t.muted);detail2.setTextColor(t.muted);
             value.setTextColor(!live?t.muted:attention?Theme.ATTENTION:t.text);
+            for(TextView labelText:readingLabels)labelText.setTextColor(t.muted);
+            for(TextView reading:readingValues)reading.setTextColor(live?t.text:t.muted);
             icon.setVisibility(shownIcon==null?GONE:VISIBLE);
             if(!inlineIcon&&title.getLayoutParams() instanceof LinearLayout.LayoutParams){ // the gap follows the icon actually shown, also one a body picks (climate)
                 LinearLayout.LayoutParams tp=(LinearLayout.LayoutParams)title.getLayoutParams();int gap=shownIcon==null?0:Math.round(8*scale);
@@ -341,8 +358,8 @@ public final class DashboardView extends FrameLayout {
         /** Sizes in 800x480 units; w/h are the tile's own size in those units, so the clock fits its hour by measurement. */
         void scale(float s,float w,float h){
             unitW=w;unitH=h;
-            int pad=Math.round((clock?ClockLayout.PAD:14)*s);column.setPadding(pad,pad,pad,pad);
-            int iconPx=Math.round((inlineIcon?52:26)*s);
+            int pad=Math.round((clock?ClockLayout.PAD:readings!=null?12:14)*s);column.setPadding(pad,pad,pad,pad);
+            int iconPx=Math.round((inlineIcon?52:readings!=null?22:26)*s);
             LinearLayout.LayoutParams ip=new LinearLayout.LayoutParams(iconPx,iconPx);if(inlineIcon)ip.rightMargin=Math.round(10*s);
             icon.setLayoutParams(ip);
             LinearLayout.LayoutParams t=new LinearLayout.LayoutParams(0,-2,1);t.leftMargin=inlineIcon||item.icon==null?0:Math.round(8*s);title.setLayoutParams(t);
@@ -355,6 +372,7 @@ public final class DashboardView extends FrameLayout {
                     detail.setVisibility(plan.showDate?VISIBLE:GONE);detail2.setVisibility(plan.showWeekday?VISIBLE:GONE);
                     break;}
                 case LARGE_VALUE:size(value,44,s);size(detail,18,s);break;
+                case ROWS:scaleReadings(s,w,h);break;
                 default:{
                     float inner=w-28;
                     if(valueIcon!=null){ // a fixed-size icon in front; the value fits what is left
@@ -390,10 +408,36 @@ public final class DashboardView extends FrameLayout {
         }
         private void apply(CardBodies.CardContent c){
             value.setText(c.value);detail.setText(c.detail);detail2.setText(c.detail2);shownIcon=c.icon!=null?c.icon:item.icon;
+            if(readings!=null){
+                for(int n=0;n<readingLabels.size();n++){
+                    CardBodies.Row row=c.rows.get(n);
+                    readingLabels.get(n).setText(row.label);readingValues.get(n).setText(row.value);
+                }
+                if(unitW>0)scaleReadings(scale,unitW,unitH);
+            }
             if(valueIcon!=null){valueIcon.setVisibility(c.valueIcon==null?GONE:VISIBLE);if(c.valueIcon!=null)valueIcon.set(c.valueIcon,Theme.current().muted);}
             if(!clock)detail.setVisibility(c.detail.isEmpty()?GONE:VISIBLE);
             lastSide=c.side;details(c.side);
             setContentDescription(c.description);
+        }
+        /** Three compact rows fit a 1x1 tile; wider/taller cards retain the same ordered list. */
+        private void scaleReadings(float s,float w,float h){
+            head.setLayoutParams(new LinearLayout.LayoutParams(-1,Math.round(22*s)));
+            float rowHeight=Math.min(36,(h-52)/readingLabels.size()),inner=w-24;
+            LinearLayout.LayoutParams rp=new LinearLayout.LayoutParams(-1,Math.round(rowHeight*readingLabels.size()*s));
+            rp.topMargin=Math.round(6*s);readings.setLayoutParams(rp);
+            for(int n=0;n<readingLabels.size();n++){
+                LinearLayout row=(LinearLayout)readings.getChildAt(n);
+                row.setLayoutParams(new LinearLayout.LayoutParams(-1,0,1));
+                TextView labelText=readingLabels.get(n),reading=readingValues.get(n);
+                size(labelText,Math.min(16,rowHeight*.6f),s);
+                float maxWidth=inner*.60f;
+                float font=TextFit.size((text,px)->{sansPaint.setTextSize(px);return sansPaint.measureText(text);},reading.getText().toString(),maxWidth,14,Math.min(22,rowHeight*.75f));
+                size(reading,font,s);sansPaint.setTextSize(font);
+                float valueWidth=Math.min(maxWidth,(float)Math.ceil(sansPaint.measureText(reading.getText().toString()))+2);
+                LinearLayout.LayoutParams vp=new LinearLayout.LayoutParams(Math.round(valueWidth*s),-1);
+                vp.leftMargin=Math.round(8*s);reading.setLayoutParams(vp);
+            }
         }
         /** The second half of a wide tile: built like the first one - big icon, big value, a small line under it. */
         private void details(CardBodies.Side s){

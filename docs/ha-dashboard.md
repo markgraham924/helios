@@ -1,5 +1,29 @@
 # Ekran Heliosa konfigurowany w Home Assistant (0.5)
 
+## Karta Odczyty - kilka encji w jednym kafelku (Helios 0.19)
+
+W edytorze Heliosa w HA wybierz **Odczyty (1–3 encje)**. Dodaj encje w
+kolejności wyświetlania i opcjonalne krótkie nazwy. Jednostki pochodzą z HA;
+karta pokazuje wartości na żywo i nie zmienia nastaw `number`/`input_number`.
+Trzy odczyty mieszczą się w kafelku 1×1. Brak danych jednego odczytu nie ukrywa
+pozostałych. Wymaga aktualizacji aplikacji do 0.19.0 i integracji do 0.17.0.
+
+```yaml
+- id: pomiary
+  type: entities
+  column: 1
+  row: 3
+  width: 1
+  height: 1
+  title: Pomiary
+  entries:
+    - { entity: sensor.salon_temperature, title: Temp. }
+    - { entity: sensor.salon_humidity, title: Wilgotność }
+    - { entity: sensor.house_power, title: Pobór }
+```
+
+Szczegóły i zachowanie offline: [SPEC 0.21](SPEC-0.21-readings-card.md).
+
 Cały dashboard poniżej stałego górnego paska pochodzi z sekcji `helios` panelu **Helios** (`/helios-clock`). Menu zegara (przytrzymanie HELIOS) i pasek statusu są stałe i lokalne; YAML nie może ich zmienić. Pełny kontrakt, walidacja i zachowanie offline: [SPEC 0.5](SPEC-0.5-ha-configurable-dashboard.md).
 
 ## Gdzie zmieniać ustawienia
