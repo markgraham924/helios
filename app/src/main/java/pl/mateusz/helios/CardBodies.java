@@ -13,6 +13,11 @@ final class CardBodies {
         final String icon,value,detail;
         Side(String icon,String value,String detail){this.icon=icon;this.value=value;this.detail=detail;}
     }
+    /** One compact read-only label/value row, in the configured order. */
+    static final class Row {
+        final String label,value;
+        Row(String label,String value){this.label=label;this.value=value;}
+    }
     /** One rendering: value line, up to two detail lines, optional label and icon overrides, the full content description, accent tint and an expiry for self-refreshing content. */
     static final class CardContent {
         final String value,detail,detail2,label,icon,description;final boolean accent;final long expiresAt;
@@ -20,8 +25,10 @@ final class CardBodies {
         String valueIcon;
         /** The second half, or null for every tile that has only one. */
         final Side side;
+        final List<Row> rows;
         CardContent(String value,String detail,String detail2,String label,String icon,String description,boolean accent,long expiresAt){this(value,detail,detail2,label,icon,description,accent,expiresAt,null);}
-        CardContent(String value,String detail,String detail2,String label,String icon,String description,boolean accent,long expiresAt,Side side){this.value=value;this.detail=detail;this.detail2=detail2;this.label=label;this.icon=icon;this.description=description;this.accent=accent;this.expiresAt=expiresAt;this.side=side;}
+        CardContent(String value,String detail,String detail2,String label,String icon,String description,boolean accent,long expiresAt,Side side){this(value,detail,detail2,label,icon,description,accent,expiresAt,side,Collections.emptyList());}
+        CardContent(String value,String detail,String detail2,String label,String icon,String description,boolean accent,long expiresAt,Side side,List<Row> rows){this.value=value;this.detail=detail;this.detail2=detail2;this.label=label;this.icon=icon;this.description=description;this.accent=accent;this.expiresAt=expiresAt;this.side=side;this.rows=Collections.unmodifiableList(new ArrayList<>(rows));}
         CardContent(String value,String detail,String label,boolean accent,long expiresAt,DashboardSpec.Item item,boolean live){this(value,detail,label,null,accent,expiresAt,item,live);}
         CardContent(String value,String detail,String label,String icon,boolean accent,long expiresAt,DashboardSpec.Item item,boolean live){
             this(value,detail,"",label,icon,(label!=null?label:defaultLabel(item))+": "+value+(detail.isEmpty()?"":", "+detail)+(live?"":", dane nieaktualne"),accent,expiresAt);
@@ -61,6 +68,7 @@ final class CardBodies {
             return new CardContent(CoverText.line("A",a),CoverText.line("B",b),"",null,null,label+": "+ca.title+": "+CoverText.state(a)+", "+cb.title+": "+CoverText.state(b)+(live?"":", dane nieaktualne"),CoverText.attention(a)||CoverText.attention(b),0);
         });
         m.put("tile",CardBodies::tile);
+        m.put("entities",CardBodies::entities);
         m.put("alerts",(item,states,live,env)->{ // the tile draws itself from AlertsModel; this keeps value and description for the shared paths
             AlertsModel a=new AlertsModel(item.sources,states,live);
             String idle=a.idleWord();
@@ -118,6 +126,30 @@ final class CardBodies {
         if(icon!=null&&(MdiIcons.installed()==null||MdiIcons.name(icon)==null||!MdiIcons.installed().has(MdiIcons.name(icon))))icon=null; // an icon the font lacks falls back to the configured one
         return new CardContent(text,"",label,icon,known&&ACTIVE.contains(e.state),0,item,live);
     }
+    /** One to three independent readings, with the card header and complete spoken labels even when some values are missing. */
+    private static CardContent entities(DashboardSpec.Item item,Map<String,EntityStates.Entity> states,boolean live,Env env){
+        List<Row> rows=new ArrayList<>();StringBuilder description=new StringBuilder(defaultLabel(item)).append(": ");
+        for(DashboardSpec.Entry entry:item.entries){
+            EntityStates.Entity entity=states.get(entry.entity);
+            String friendly=entity==null?null:entity.attribute("friendly_name");
+            String label=entry.title!=null?entry.title:friendly!=null&&!friendly.trim().isEmpty()?friendly:entityLabel(entry.entity);
+            String value=reading(entry.entity,entity);
+            if(!rows.isEmpty())description.append(", ");
+            description.append(label).append(": ").append(value.equals("—")?"brak danych":value);
+            rows.add(new Row(label,value));
+        }
+        if(!live)description.append(", dane nieaktualne");
+        return new CardContent("","","",null,null,description.toString(),false,0,null,rows);
+    }
+    /** Numeric readings use the Polish decimal even without units; other states keep the tile's domain translations. */
+    private static String reading(String id,EntityStates.Entity entity){
+        if(entity==null||!entity.known())return "—";
+        String unit=unit(entity);
+        try{
+            double value=Double.parseDouble(entity.state);
+            return Double.isFinite(value)?decimal(entity.state,unit).trim():entity.state+(unit.isEmpty()?"":" "+unit);
+        }catch(NumberFormatException ignored){return stateText(id.substring(0,id.indexOf('.')),entity);}
+    }
     private static final List<String> OPENINGS=Arrays.asList("door","window","garage_door","opening","gate"),PRESENCE=Arrays.asList("motion","occupancy","presence","moving");
     static String stateText(String domain,EntityStates.Entity e){
         String s=e.state,cls=e.attribute("device_class");
@@ -139,7 +171,10 @@ final class CardBodies {
         if(item.title!=null)return item.title;
         CardDefinition def=CardDefinition.of(item.type);
         if(def!=null&&def.defaultTitle!=null)return def.defaultTitle;
-        String name=item.entity.substring(item.entity.indexOf('.')+1).replace('_',' ');
+        return entityLabel(item.entity);
+    }
+    private static String entityLabel(String entity){
+        String name=entity.substring(entity.indexOf('.')+1).replace('_',' ');
         return name.substring(0,1).toUpperCase(new Locale("pl"))+name.substring(1);
     }
     static String number(String raw,String unit){

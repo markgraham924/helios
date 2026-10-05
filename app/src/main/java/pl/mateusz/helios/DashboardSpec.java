@@ -38,6 +38,8 @@ final class DashboardSpec {
     }
     /** One roller shutter inside a cover_group: entity for the services, title for the panel row. */
     static final class Cover {final String entity,title;Cover(String entity,String title){this.entity=entity;this.title=title;}}
+    /** One ordered read-only row in an entities card; a missing title comes from HA's friendly name or the entity id. */
+    static final class Entry {final String entity,title;Entry(String entity,String title){this.entity=entity;this.title=title;}}
     /** One warning feeding an `alerts` tile (SPEC 0.20 pkt 2): its text entity, its condition, an optional icon and lights to turn off. */
     static final class Source {
         final String title,entity,icon,whenEntity,whenState,offEntity,doneEntity,doneLabel;final boolean showSince;
@@ -58,6 +60,7 @@ final class DashboardSpec {
         final int column,row,width,height;
         final boolean confirm,ownIcon; // ownIcon: the icon was named in the config, so the entity's own icon never replaces it
         final List<Cover> covers;
+        final List<Entry> entries;
         Item(String id,String type,int column,int row,int width,int height,String title,String icon,String entity,String temperatureEntity,String attribute,String action,String visibleEntity,String visibleState,boolean confirm,String confirmText){
             this(id,type,column,row,width,height,title,icon,entity,temperatureEntity,attribute,action,visibleEntity,visibleState,confirm,confirmText,Collections.emptyList(),null,null,null,null);
         }
@@ -65,8 +68,12 @@ final class DashboardSpec {
             this(id,type,column,row,width,height,title,icon,entity,temperatureEntity,attribute,action,visibleEntity,visibleState,confirm,confirmText,covers,forecastEntity,forecastWhenEntity,forecastWhenState,offEntity,false);
         }
         Item(String id,String type,int column,int row,int width,int height,String title,String icon,String entity,String temperatureEntity,String attribute,String action,String visibleEntity,String visibleState,boolean confirm,String confirmText,List<Cover> covers,String forecastEntity,String forecastWhenEntity,String forecastWhenState,String offEntity,boolean ownIcon){
+            this(id,type,column,row,width,height,title,icon,entity,temperatureEntity,attribute,action,visibleEntity,visibleState,confirm,confirmText,covers,forecastEntity,forecastWhenEntity,forecastWhenState,offEntity,ownIcon,Collections.emptyList());
+        }
+        Item(String id,String type,int column,int row,int width,int height,String title,String icon,String entity,String temperatureEntity,String attribute,String action,String visibleEntity,String visibleState,boolean confirm,String confirmText,List<Cover> covers,String forecastEntity,String forecastWhenEntity,String forecastWhenState,String offEntity,boolean ownIcon,List<Entry> entries){
             this.ownIcon=ownIcon;this.id=id;this.type=type;this.column=column;this.row=row;this.width=width;this.height=height;this.title=title;this.icon=icon;this.entity=entity;this.temperatureEntity=temperatureEntity;this.attribute=attribute;this.action=action;this.visibleEntity=visibleEntity;this.visibleState=visibleState;this.confirm=confirm;this.confirmText=confirmText;
             this.covers=Collections.unmodifiableList(covers);this.forecastEntity=forecastEntity;this.forecastWhenEntity=forecastWhenEntity;this.forecastWhenState=forecastWhenState;this.offEntity=offEntity;
+            this.entries=Collections.unmodifiableList(new ArrayList<>(entries));
         }
         /** The whole tile swaps to tomorrow when the mode entity is live and equals the configured state (SPEC 0.9 pkt 7.2). */
         boolean forecast(){return forecastEntity!=null;}
@@ -214,7 +221,8 @@ final class DashboardSpec {
             if(forced&&!confirm)throw new IllegalArgumentException("Akcja "+action+" wymaga potwierdzenia");
             if(c.has("text"))confirmText=string(c,"text",true,80);
         }
-        Item out=new Item(id,type,column,row,width,height,title,icon,entity,temperatureEntity,attribute,action,visibleEntity,visibleState,confirm,confirmText,covers,forecastEntity,forecastWhenEntity,forecastWhenState,offEntity,ownIcon);
+        List<Entry> entries=allowed.contains("entries")?entries(o):Collections.emptyList();
+        Item out=new Item(id,type,column,row,width,height,title,icon,entity,temperatureEntity,attribute,action,visibleEntity,visibleState,confirm,confirmText,covers,forecastEntity,forecastWhenEntity,forecastWhenState,offEntity,ownIcon,entries);
         if(allowed.contains("load_entity")){
             out.loadEntity=string(o,"load_entity",true,128);
             if(!out.loadEntity.matches("sensor\\.[a-z0-9_]+"))throw new IllegalArgumentException("load_entity wymaga encji sensor");
@@ -222,6 +230,19 @@ final class DashboardSpec {
         }
         if(allowed.contains("sources"))alerts(o,out,version);
         return out;
+    }
+    private static List<Entry> entries(JSONObject o) throws Exception {
+        JSONArray list=o.optJSONArray("entries");
+        if(list==null||list.length()<1||list.length()>3)throw new IllegalArgumentException("entities wymaga od 1 do 3 pozycji entries");
+        List<Entry> entries=new ArrayList<>();
+        for(int n=0;n<list.length();n++){
+            JSONObject row=list.optJSONObject(n);if(row==null)throw new IllegalArgumentException("entries: pozycja musi być obiektem");
+            keys(row,Arrays.asList("entity","title"),"entries");
+            String entity=string(row,"entity",true,128),title=row.has("title")?string(row,"title",true,40):null;
+            if(!entity.matches(ENTITY))throw new IllegalArgumentException("entries: nieprawidłowa encja "+entity);
+            entries.add(new Entry(entity,title));
+        }
+        return entries;
     }
     private static final Set<String> SOURCE_KEYS=new HashSet<>(Arrays.asList("title","entity","icon","when","off_entity","show_since","done_entity","done_label","blink"));
     /** The `alerts` parts: 1-12 sources with distinct conditions, and an optional stand-in card of a plain type. */
@@ -311,6 +332,7 @@ final class DashboardSpec {
         for(Item i:rendered()){
             for(Source s:i.sources){out.add(s.whenEntity);out.add(s.entity);out.add(s.offEntity);out.add(s.doneEntity);}
             if(i.entity!=null)out.add(i.entity);for(Cover c:i.covers)out.add(c.entity);if(i.temperatureEntity!=null)out.add(i.temperatureEntity);
+            for(Entry e:i.entries)out.add(e.entity);
             out.add(i.loadEntity);out.add(i.batteryEntity); // energy; nulls go with out.remove(null) below
             if(i.forecastWhenEntity!=null)out.add(i.forecastWhenEntity); // a forecast entity may stand without a mode entity; a null here would be sent to HA and take the whole subscription down
             if(i.forecastEntity!=null)out.add(i.forecastEntity);
@@ -325,6 +347,7 @@ final class DashboardSpec {
         for(Item i:rendered()){
             CardDefinition def=CardDefinition.of(i.type);
             if(i.entity!=null&&!def.attributes.isEmpty())out.computeIfAbsent(i.entity,k->new HashSet<>()).addAll(def.attributes);
+            for(Entry e:i.entries)out.computeIfAbsent(e.entity,k->new HashSet<>()).addAll(TILE_ATTRIBUTES);
             for(Cover c:i.covers)out.computeIfAbsent(c.entity,k->new HashSet<>()).addAll(COVER_ATTRIBUTES);
             if(i.forecastEntity!=null)out.computeIfAbsent(i.forecastEntity,k->new HashSet<>()).addAll(FORECAST_ATTRIBUTES);
             if(i.attribute!=null)out.computeIfAbsent(i.entity,k->new HashSet<>()).add(i.attribute);

@@ -5,7 +5,7 @@ import java.util.*;
 /** Schema and rendering facts for one card type. Pure data: no JSON, no Views, no sockets. Adding a type means one row here, one body in CardBodies and, if it taps, one rule in ActionPolicy. */
 final class CardDefinition {
     /** How the tile sizes its text: the clock measures its hour, weather keeps a big fixed value, the rest fit the value to the width. */
-    enum Layout {CLOCK,LARGE_VALUE,FIT,BIG_FIT} // BIG_FIT: FIT that may grow to the weather size (energy: the battery)
+    enum Layout {CLOCK,LARGE_VALUE,FIT,BIG_FIT,ROWS} // BIG_FIT: FIT that may grow to the weather size (energy: the battery); ROWS: compact label/value readings
     /** When the tile is tappable: always, only with a known state, or only with a known state and no call in flight. */
     enum Gate {NONE,KNOWN,KNOWN_NOT_PENDING}
     /** Which event re-renders the tile: the entity snapshot, the local clock or the music player. */
@@ -50,6 +50,7 @@ final class CardDefinition {
             // SPEC 0.20: every warning in one tile - the count and the newest few; the tap slides the full list in; a stand-in card while none applies
             new CardDefinition("alerts",6,fields("sources",6,"empty",6),null,"alerts",null,false,false,false,false,false,null,"Uwagi",NONE,Layout.FIT,Gate.NONE,Feed.ENTITIES),
             new CardDefinition("energy",6,fields("entity",6,"load_entity",6,"battery_entity",6,"icon",6),"sensor",null,null,false,false,false,false,false,"mdi:solar-power","PV",DashboardSpec.UNIT_ATTRIBUTES,Layout.BIG_FIT,Gate.NONE,Feed.ENTITIES),
+            new CardDefinition("entities",6,fields("entries",6,"icon",6),null,null,null,false,false,false,false,false,"mdi:format-list-bulleted","Odczyty",DashboardSpec.TILE_ATTRIBUTES,Layout.ROWS,Gate.NONE,Feed.ENTITIES),
         })all.put(d.type,d);
         ALL=Collections.unmodifiableMap(all);
         Set<String> known=new HashSet<>();for(CardDefinition d:all.values())known.addAll(d.fields.keySet());
