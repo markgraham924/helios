@@ -166,3 +166,5 @@ The Polish README that documented the 0.5 to 0.8 development is kept as
 The English fork supports a read-only `predbat` card with an entity such as `predbat.status`. It shows the current execution status and its `detail` attribute, including active current/target SOC percentages. Demand does not display a future planned target.
 
 For this rooted Lenovo Smart Clock 2, `tools/lenovo-spotify-toggle.sh` is installed separately as a Magisk boot service. Physical Volume+ toggles native Spotify and Helios on release; remove any competing Volume+ remap. This script assumes this clock's `/dev/input/event3`; it is not a general Android key mapping. Volume- remains the existing volume-down mapping. Remove the service file and stop its process to undo it.
+
+Titleless wide 2×1 clock cards use a large time beside a two-line date inside the same card. Taller or titled clock cards keep the existing stacked layout.

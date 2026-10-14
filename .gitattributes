@@ -7,3 +7,5 @@ app/src/main/assets/*-OFL.txt -whitespace
 *.tflite binary
 *.ttf binary
 *.jar binary
+
+tools/lenovo-spotify-toggle.sh text eol=lf

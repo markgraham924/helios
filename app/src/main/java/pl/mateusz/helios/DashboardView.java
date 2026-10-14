@@ -272,7 +272,7 @@ public final class DashboardView extends FrameLayout {
         final LinearLayout readings;
         final List<TextView> readingLabels=new ArrayList<>(),readingValues=new ArrayList<>();
         final ProgressBar spinner;
-        final boolean clock;
+        final boolean clock,wideClock;
         float unitW,unitH;
         boolean live=true,accent,known=true;long forecastExpiresAt;
         String rowsKey=""; // the second half is rebuilt only when what it shows actually changes
@@ -280,7 +280,7 @@ public final class DashboardView extends FrameLayout {
         boolean substitute; // the stand-in card of an `alerts` tile: shown by that tile's state, not by visible_when
         String shownIcon; // the config icon, or the entity's own when the body prefers it
         Tile(DashboardSpec.Item item){
-            super(DashboardView.this.getContext());this.item=item;def=CardDefinition.of(item.type);body=CardBodies.FOR.get(item.type);clock=def.layout==CardDefinition.Layout.CLOCK;shownIcon=item.icon;
+            super(DashboardView.this.getContext());this.item=item;def=CardDefinition.of(item.type);body=CardBodies.FOR.get(item.type);clock=def.layout==CardDefinition.Layout.CLOCK;wideClock=clock&&item.title==null&&item.width>=2&&item.height==1;shownIcon=item.icon;
             split=new LinearLayout(getContext());split.setOrientation(LinearLayout.HORIZONTAL);addView(split,new LayoutParams(-1,-1));
             column=new LinearLayout(getContext());column.setOrientation(LinearLayout.VERTICAL);column.setGravity(Gravity.CENTER_VERTICAL);split.addView(column,new LinearLayout.LayoutParams(0,-1,1));
             rule=new View(getContext());rule.setVisibility(GONE);split.addView(rule,new LinearLayout.LayoutParams(1,-1));
@@ -310,6 +310,15 @@ public final class DashboardView extends FrameLayout {
             if(shownIcon==null)icon.setVisibility(GONE);
             detail=line(sans,1);column.addView(detail);
             detail2=line(sans,1);column.addView(detail2);detail2.setVisibility(GONE);
+            if(wideClock){
+                // One wide tile: a large time on the left and a two-line date on the right.
+                column.removeView(value);column.removeView(detail);column.removeView(detail2);
+                column.setOrientation(LinearLayout.HORIZONTAL);
+                value.setGravity(Gravity.CENTER_VERTICAL);detail.setGravity(Gravity.CENTER);
+                detail.setMaxLines(2);
+                column.addView(value,new LinearLayout.LayoutParams(0,-1,.62f));
+                column.addView(detail,new LinearLayout.LayoutParams(0,-1,.38f));
+            }
             readings=def.layout==CardDefinition.Layout.ROWS?new LinearLayout(getContext()):null;
             if(readings!=null){
                 readings.setOrientation(LinearLayout.VERTICAL);column.addView(readings);
@@ -366,6 +375,13 @@ public final class DashboardView extends FrameLayout {
             size(title,clock?ClockLayout.TITLE:17,s);
             switch(def.layout){
                 case CLOCK:{
+                    if(wideClock){
+                        float available=(w-2*ClockLayout.PAD)*.62f;
+                        float hour=TextFit.fit((text,px)->{monoPaint.setTextSize(px);monoPaint.setLetterSpacing(-.05f);return monoPaint.measureText(text);},time,available,80);
+                        size(value,hour,s);value.setLetterSpacing(-.05f);
+                        size(detail,30,s);detail.setVisibility(VISIBLE);detail2.setVisibility(GONE);
+                        break;
+                    }
                     ClockLayout.Plan plan=ClockLayout.plan((text,size)->{monoPaint.setTextSize(size);monoPaint.setLetterSpacing(-.05f);return monoPaint.measureText(text);},time,w,h,item.title!=null);
                     size(value,plan.hourSize,s);value.setLetterSpacing(-.05f);
                     size(detail,ClockLayout.DATE,s);size(detail2,ClockLayout.WEEKDAY,s);
