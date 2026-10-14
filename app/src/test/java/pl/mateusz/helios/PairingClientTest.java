@@ -23,11 +23,11 @@ public class PairingClientTest {
         }
         try(TestHttp bad=new TestHttp(r->TestHttp.Response.json(401,"{\"error\":\"unauthorized\"}"))){
             PairingClient.Result r=PairingClient.pair(bad.url(""),new JSONObject());
-            assertEquals(401,r.status);assertEquals("unauthorized",r.json.getString("error"));assertEquals("Kod nieprawidłowy lub wygasł",PairingClient.message(r.status));
+            assertEquals(401,r.status);assertEquals("unauthorized",r.json.getString("error"));assertEquals("Code is invalid or expired",PairingClient.message(r.status));
         }
-        assertEquals("HA nie dokończył parowania - spróbuj ponownie",PairingClient.message(409));
-        assertEquals("HA nie jest gotowy (brak pipeline Assist lub błąd tożsamości)",PairingClient.message(503));
-        assertEquals("Brak połączenia z HA",PairingClient.message(-1));
+        assertEquals("HA did not complete pairing - try again",PairingClient.message(409));
+        assertEquals("HA is not ready (no Assist pipeline or identity error)",PairingClient.message(503));
+        assertEquals("No connection to HA",PairingClient.message(-1));
         assertEquals(-1,PairingClient.pair("http://127.0.0.1:1",new JSONObject()).status);
     }
 }

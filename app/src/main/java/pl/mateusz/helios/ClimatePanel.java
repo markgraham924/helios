@@ -66,19 +66,19 @@ final class ClimatePanel {
         note=text(18,t.muted);note.setPadding(px(16),0,0,0);head.addView(note,new LinearLayout.LayoutParams(0,-2,1)); // why controls are off, or what failed
         root.addView(head,box(ClimatePanelGeometry.TITLE));
         title.setText(name);
-        MusicOverlay.IconButton close=new MusicOverlay.IconButton(activity,"mdi:close","Zamknij");root.addView(close,box(ClimatePanelGeometry.CLOSE));close.style(t.raised,t.text,s);
+        MusicOverlay.IconButton close=new MusicOverlay.IconButton(activity,"mdi:close","Close");root.addView(close,box(ClimatePanelGeometry.CLOSE));close.style(t.raised,t.text,s);
         close.setOnClickListener(v->closeByUser());
         card(ClimatePanelGeometry.NOW_CARD,t);card(ClimatePanelGeometry.SET_CARD,t);
-        label("W pokoju",ClimatePanelGeometry.NOW_LABEL,18,t.muted);label("Zadana",ClimatePanelGeometry.SET_LABEL,18,t.muted);
+        label("Room",ClimatePanelGeometry.NOW_LABEL,18,t.muted);label("Target",ClimatePanelGeometry.SET_LABEL,18,t.muted);
         nowValue=label("",ClimatePanelGeometry.NOW_VALUE,76,t.text);
         activity_=label("",ClimatePanelGeometry.ACTIVITY,20,t.muted);
-        minus=new MusicOverlay.IconButton(activity,"mdi:minus","Zmniejsz temperaturę zadaną");root.addView(minus,box(ClimatePanelGeometry.MINUS));
-        plus=new MusicOverlay.IconButton(activity,"mdi:plus","Zwiększ temperaturę zadaną");root.addView(plus,box(ClimatePanelGeometry.PLUS));
+        minus=new MusicOverlay.IconButton(activity,"mdi:minus","Decrease target temperature");root.addView(minus,box(ClimatePanelGeometry.MINUS));
+        plus=new MusicOverlay.IconButton(activity,"mdi:plus","Increase target temperature");root.addView(plus,box(ClimatePanelGeometry.PLUS));
         square(minus,t);square(plus,t);
         minus.setOnClickListener(v->step(-1));plus.setOnClickListener(v->step(1));
         setValue=label("",ClimatePanelGeometry.SET_VALUE,64,t.text);setValue.setGravity(Gravity.CENTER);
         setStatus=label("",ClimatePanelGeometry.SET_STATUS,18,t.muted);
-        modeLabel=label("Tryb",ClimatePanelGeometry.MODE_LABEL,16,t.muted);
+        modeLabel=label("Mode",ClimatePanelGeometry.MODE_LABEL,16,t.muted);
         modeRow=row(ClimatePanelGeometry.MODES);listRow=row(ClimatePanelGeometry.LISTS);
         dialog=new Dialog(activity);dialog.requestWindowFeature(Window.FEATURE_NO_TITLE);
         Box w=ClimatePanelGeometry.WINDOW;
@@ -107,8 +107,8 @@ final class ClimatePanel {
         Theme t=Theme.current();
         boolean usable=host.live()&&m.known;
         titleIcon.set(m.icon(),m.known&&m.working()?t.accent:t.muted);
-        String why=!host.live()?"Brak połączenia z Home Assistant":!m.known?"Brak połączenia":flow.message();
-        activity_.setText(!m.known?"Brak połączenia":m.actionWord()==null?"":m.actionWord());
+        String why=!host.live()?"No connection to Home Assistant":!m.known?"Disconnected":flow.message();
+        activity_.setText(!m.known?"Disconnected":m.actionWord()==null?"":m.actionWord());
         activity_.setTextColor(m.known&&m.working()?t.accent:t.muted);
         nowValue.setText(m.currentText());
         Double shown=flow.shown(m);
@@ -154,7 +154,7 @@ final class ClimatePanel {
         modeLabel.setVisibility(m.modes.isEmpty()?View.GONE:View.VISIBLE);
         if(picker){
             List<String> labels=new ArrayList<>();for(String mode:m.modes)labels.add(ClimateModel.mode(mode,false));
-            addSelector(modeRow,"Tryb",ClimateModel.mode(m.state,false),"set_hvac_mode".equals(flow.inFlight()),enabled,1,()->openPicker("Tryb",m.modes,labels,m.state,v->choose("set_hvac_mode",v)));
+            addSelector(modeRow,"Mode",ClimateModel.mode(m.state,false),"set_hvac_mode".equals(flow.inFlight()),enabled,1,()->openPicker("Mode",m.modes,labels,m.state,v->choose("set_hvac_mode",v)));
             return;
         }
         int n=m.modes.size();
@@ -190,7 +190,7 @@ final class ClimatePanel {
         View mark=sending?spinner():new IconView(activity);if(!sending)((IconView)mark).set("mdi:chevron-down",t.muted);
         FrameLayout.LayoutParams cp=new FrameLayout.LayoutParams(px(26),px(26),Gravity.END|Gravity.CENTER_VERTICAL);cp.rightMargin=px(14);b.addView(mark,cp);
         b.setClickable(true);b.setEnabled(enabled);b.setAlpha(enabled||sending?1f:.4f);
-        b.setContentDescription(label+": "+value+(sending?", zmieniane":""));
+        b.setContentDescription(label+": "+value+(sending?", changing":""));
         b.setOnClickListener(x->{if(enabled)open.run();});
         add(row,b,row.getChildCount(),n);
     }
@@ -205,7 +205,7 @@ final class ClimatePanel {
         FrameLayout box=new FrameLayout(activity){@Override public boolean dispatchTouchEvent(MotionEvent e){if(e.getActionMasked()==MotionEvent.ACTION_DOWN)touched();return super.dispatchTouchEvent(e);}};
         box.setBackground(Theme.card(t.surface,Theme.RADIUS*s));
         TextView head=text(22,t.text);head.setText(title);head.setGravity(Gravity.CENTER_VERTICAL);box.addView(head,box(ClimatePanelGeometry.PICKER_TITLE,0,0));
-        MusicOverlay.IconButton close=new MusicOverlay.IconButton(activity,"mdi:close","Zamknij listę");box.addView(close,box(ClimatePanelGeometry.PICKER_CLOSE,0,0));close.style(t.raised,t.text,s);
+        MusicOverlay.IconButton close=new MusicOverlay.IconButton(activity,"mdi:close","Close list");box.addView(close,box(ClimatePanelGeometry.PICKER_CLOSE,0,0));close.style(t.raised,t.text,s);
         ScrollView scroll=new ScrollView(activity);scroll.setVerticalScrollBarEnabled(values.size()>4);scroll.setScrollbarFadingEnabled(false);
         LinearLayout list=new LinearLayout(activity);list.setOrientation(LinearLayout.VERTICAL);scroll.addView(list);
         box.addView(scroll,box(ClimatePanelGeometry.PICKER_LIST,0,0));
@@ -215,7 +215,7 @@ final class ClimatePanel {
             FrameLayout row=new FrameLayout(activity);row.setBackground(fill(selected?selectedFill(t):t.raised,selected,t));
             TextView l=text(21,t.text);l.setText(labels.get(i));l.setGravity(Gravity.CENTER_VERTICAL);l.setPadding(px(20),0,px(52),0);row.addView(l,new FrameLayout.LayoutParams(-1,-1));
             if(selected){IconView check=new IconView(activity);check.set("mdi:check",t.text);FrameLayout.LayoutParams cp=new FrameLayout.LayoutParams(px(30),px(30),Gravity.END|Gravity.CENTER_VERTICAL);cp.rightMargin=px(16);row.addView(check,cp);}
-            row.setClickable(true);row.setSelected(selected);row.setContentDescription(labels.get(i)+(selected?", wybrane":""));
+            row.setClickable(true);row.setSelected(selected);row.setContentDescription(labels.get(i)+(selected?", selected":""));
             row.setOnClickListener(v->{d.dismiss();if(!value.equals(current))pick.accept(value);});
             LinearLayout.LayoutParams rp=new LinearLayout.LayoutParams(-1,px(ClimatePanelGeometry.ROW));rp.bottomMargin=px(ClimatePanelGeometry.ROW_STEP-ClimatePanelGeometry.ROW);list.addView(row,rp);
         }
@@ -260,7 +260,7 @@ final class ClimatePanel {
         b.setBackground(fill(selected?selectedFill(t):t.raised,selected,t));
         TextView l=text(size,t.text);l.setText(label);l.setGravity(Gravity.CENTER);b.addView(l,new FrameLayout.LayoutParams(-1,-1));
         if(sending){FrameLayout.LayoutParams sp=new FrameLayout.LayoutParams(px(20),px(20),Gravity.END|Gravity.TOP);sp.topMargin=sp.rightMargin=px(6);b.addView(spinner(),sp);}
-        b.setContentDescription("Tryb "+label+(selected?", wybrany":"")+(sending?", zmieniany":""));
+        b.setContentDescription("Mode "+label+(selected?", selected":"")+(sending?", changing":""));
         return b;
     }
     private View spinner(){android.widget.ProgressBar p=new android.widget.ProgressBar(activity);p.setIndeterminate(true);return p;}

@@ -16,8 +16,8 @@ public class DashboardSpecV6Test {
         JSONObject p=new JSONObject().put("id",id).put("items",a);if(title!=null)p.put("title",title);return p;
     }
     static JSONObject example() throws Exception {
-        JSONObject main=page("main","Dom",
-            item("clock","clock",1,1,2,2).put("title","Dom"),
+        JSONObject main=page("main","Home",
+            item("clock","clock",1,1,2,2).put("title","Home"),
             item("weather","weather",3,1,2,1).put("entity","weather.forecast_dom"),
             tile("salon","light.salon",3,2).put("icon","mdi:ceiling-light").put("tap_action",new JSONObject().put("action","toggle")),
             tile("roleta","cover.roleta_salon",4,2),
@@ -44,7 +44,7 @@ public class DashboardSpecV6Test {
 
     @Test public void pagesTilesIntentsAndIcons() throws Exception {
         DashboardSpec spec=DashboardSpec.parse(new JSONObject(example().toString()));
-        assertEquals(6,spec.version);assertEquals(2,spec.pages.size());assertEquals("Dom",spec.pages.get(0).title);assertEquals("sypialnia",spec.pages.get(1).id);
+        assertEquals(6,spec.version);assertEquals(2,spec.pages.size());assertEquals("Home",spec.pages.get(0).title);assertEquals("sypialnia",spec.pages.get(1).id);
         assertSame(spec.pages.get(0).items,spec.items);assertEquals(8,spec.items.size());
         assertNotNull(spec.item("garaz"));assertEquals("close",spec.item("garaz").action);
         // intents: explicit, default per domain, forced confirmation on locks
@@ -91,7 +91,7 @@ public class DashboardSpecV6Test {
         root=example();root.remove("pages");rejects(root,"missing pages");
         root=example().put("pages",new JSONArray());rejects(root,"no pages");
         root=example();root.getJSONArray("pages").put(page("main","x"));rejects(root,"duplicate page id");
-        root=example();root.getJSONArray("pages").put(page("Zła strona",null));rejects(root,"bad page id");
+        root=example();root.getJSONArray("pages").put(page("Zła pagesa",null));rejects(root,"bad page id");
         root=example();root.getJSONArray("pages").getJSONObject(1).put("extra",1);rejects(root,"unknown page field");
         root=example();root.getJSONArray("pages").getJSONObject(1).getJSONArray("items").put(tile("salon","light.y",4,3));rejects(root,"item id repeated on another page");
         root=example();for(int i=0;i<7;i++)root.getJSONArray("pages").put(page("p"+i,null));rejects(root,"nine pages");

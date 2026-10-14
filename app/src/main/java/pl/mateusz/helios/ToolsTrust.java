@@ -56,10 +56,10 @@ final class ToolsTrust {
     /** What to tell the user when a call cannot go out. */
     static String explain(Status status) {
         switch (status) {
-            case ABSENT: return "Narzędzia zegara nie są zainstalowane";
-            case NEEDS_ACCEPT: return "Zaakceptuj narzędzia zegara w menu";
-            case CHANGED: return "Narzędzia zegara mają inny podpis niż zaakceptowany";
-            case TOO_OLD: return "Narzędzia zegara są za stare, zaktualizuj je";
+            case ABSENT: return "Clock tools are not installed";
+            case NEEDS_ACCEPT: return "Accept clock tools in the menu";
+            case CHANGED: return "Clock tools have a different signature from the accepted one";
+            case TOO_OLD: return "Clock tools are outdated - update them";
             default: return "";
         }
     }

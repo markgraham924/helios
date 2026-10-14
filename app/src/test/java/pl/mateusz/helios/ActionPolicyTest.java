@@ -11,11 +11,11 @@ public class ActionPolicyTest {
     }
     @Test public void legacyTapsMapToTheHardcodedServicesOnTheTilesOwnEntity(){
         ActionPolicy.Call c=ActionPolicy.call(item("light","toggle","light.salon",null),"Salon");
-        assertEquals("light",c.domain);assertEquals("toggle",c.service);assertEquals("light.salon",c.entity);assertEquals("Przełączyć: Salon?",c.question);
+        assertEquals("light",c.domain);assertEquals("toggle",c.service);assertEquals("light.salon",c.entity);assertEquals("Toggle: Salon?",c.question);
         c=ActionPolicy.call(item("garage","close","cover.brama",null),"Brama");
-        assertEquals("cover",c.domain);assertEquals("close_cover",c.service);assertEquals("cover.brama",c.entity);assertEquals("Zamknąć bramę?",c.question);
+        assertEquals("cover",c.domain);assertEquals("close_cover",c.service);assertEquals("cover.brama",c.entity);assertEquals("Close the garage door?",c.question);
         c=ActionPolicy.call(item("entity","lights_off","sensor.swiatla","light.grupa"),"Światła");
-        assertEquals("light",c.domain);assertEquals("turn_off",c.service);assertEquals("light.grupa",c.entity);assertEquals("Zgasić światła?",c.question);
+        assertEquals("light",c.domain);assertEquals("turn_off",c.service);assertEquals("light.grupa",c.entity);assertEquals("Turn off the lights?",c.question);
     }
     @Test public void panelsAreNotCallsAndReadOnlyTilesAreNeither(){
         assertEquals(ActionPolicy.Panel.COVER,ActionPolicy.panel("controls"));assertEquals(ActionPolicy.Panel.COVER_GROUP,ActionPolicy.panel("covers"));
@@ -53,12 +53,12 @@ public class ActionPolicyTest {
     }
     @Test public void tileIntentsCallTheEntitysOwnDomain(){
         ActionPolicy.Call c=ActionPolicy.call(item("tile","turn_on","switch.pompa",null),"Pompa");
-        assertEquals("switch",c.domain);assertEquals("turn_on",c.service);assertEquals("switch.pompa",c.entity);assertEquals("Włączyć: Pompa?",c.question);
-        c=ActionPolicy.call(item("tile","activate","scene.noc",null),"Noc");assertEquals("scene",c.domain);assertEquals("turn_on",c.service);assertEquals("Uruchomić: Noc?",c.question);
+        assertEquals("switch",c.domain);assertEquals("turn_on",c.service);assertEquals("switch.pompa",c.entity);assertEquals("Turn on: Pompa?",c.question);
+        c=ActionPolicy.call(item("tile","activate","scene.noc",null),"Noc");assertEquals("scene",c.domain);assertEquals("turn_on",c.service);assertEquals("Run: Noc?",c.question);
         c=ActionPolicy.call(item("tile","activate","input_button.dzwonek",null),"Dzwonek");assertEquals("press",c.service);
-        c=ActionPolicy.call(item("tile","unlock","lock.drzwi",null),"Drzwi");assertEquals("lock",c.domain);assertEquals("unlock",c.service);assertEquals("Otworzyć zamek: Drzwi?",c.question);
-        c=ActionPolicy.call(item("tile","close","cover.roleta",null),"Roleta");assertEquals("close_cover",c.service);assertEquals("Zamknąć: Roleta?",c.question);
-        c=ActionPolicy.call(item("tile","close","cover.roleta",null),CLOSE,"Roleta");assertEquals("Zamknąć: Roleta?",c.question);
+        c=ActionPolicy.call(item("tile","unlock","lock.drzwi",null),"Drzwi");assertEquals("lock",c.domain);assertEquals("unlock",c.service);assertEquals("Unlock: Drzwi?",c.question);
+        c=ActionPolicy.call(item("tile","close","cover.roleta",null),"Roleta");assertEquals("close_cover",c.service);assertEquals("Close: Roleta?",c.question);
+        c=ActionPolicy.call(item("tile","close","cover.roleta",null),CLOSE,"Roleta");assertEquals("Close: Roleta?",c.question);
         assertNull(ActionPolicy.call(item("tile","x","cover.roleta",null),CONTROLS,"Roleta"));
     }
 }

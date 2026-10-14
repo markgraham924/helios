@@ -58,17 +58,17 @@ final class ActionPolicy {
     }
     static String question(Intent i,String label){
         switch(i){
-            case TOGGLE:return "Przełączyć: "+label+"?";case TURN_ON:return "Włączyć: "+label+"?";case TURN_OFF:return "Wyłączyć: "+label+"?";
-            case OPEN:return "Otworzyć: "+label+"?";case CLOSE:return "Zamknąć: "+label+"?";case STOP:return "Zatrzymać: "+label+"?";
-            case ACTIVATE:return "Uruchomić: "+label+"?";case LOCK:return "Zamknąć zamek: "+label+"?";case UNLOCK:return "Otworzyć zamek: "+label+"?";
+            case TOGGLE:return "Toggle: "+label+"?";case TURN_ON:return "Turn on: "+label+"?";case TURN_OFF:return "Turn off: "+label+"?";
+            case OPEN:return "Open: "+label+"?";case CLOSE:return "Close: "+label+"?";case STOP:return "Stop: "+label+"?";
+            case ACTIVATE:return "Run: "+label+"?";case LOCK:return "Lock: "+label+"?";case UNLOCK:return "Unlock: "+label+"?";
             default:return null;
         }
     }
     /** Button word in the details dialog. */
     static String verb(Intent i){
         switch(i){
-            case TOGGLE:return "Przełącz";case TURN_ON:return "Włącz";case TURN_OFF:return "Wyłącz";case OPEN:return "Otwórz";case CLOSE:return "Zamknij";case STOP:return "Zatrzymaj";
-            case CONTROLS:return "Sterowanie";case ACTIVATE:return "Uruchom";case LOCK:return "Zamknij zamek";case UNLOCK:return "Otwórz zamek";default:return null;
+            case TOGGLE:return "Toggle";case TURN_ON:return "Turn on";case TURN_OFF:return "Turn off";case OPEN:return "Open";case CLOSE:return "Close";case STOP:return "Stop";
+            case CONTROLS:return "Controls";case ACTIVATE:return "Run";case LOCK:return "Lock";case UNLOCK:return "Unlock";default:return null;
         }
     }
     /** The six climate services the panel may call and the one data key each takes (SPEC 0.19 pkt 6). */
@@ -92,7 +92,7 @@ final class ActionPolicy {
     /** The service call an item's action stands for; null when the action opens a panel or the item is not tappable. */
     static Call call(DashboardSpec.Item item,String label){
         if(item.action==null)return null;
-        if(item.action.equals("lights_off"))return new Call("light","turn_off",item.offEntity,"Zgasić światła?");
+        if(item.action.equals("lights_off"))return new Call("light","turn_off",item.offEntity,"Turn off the lights?");
         Intent i=intent(item.action);
         return i==null?null:call(item,i,label);
     }
@@ -100,7 +100,7 @@ final class ActionPolicy {
     static Call call(DashboardSpec.Item item,Intent i,String label){
         String domain=item.entity.substring(0,item.entity.indexOf('.')),service=service(i,domain);
         if(service==null)return null;
-        return new Call(domain,service,item.entity,i==Intent.CLOSE&&item.type.equals("garage")?"Zamknąć bramę?":question(i,label));
+        return new Call(domain,service,item.entity,i==Intent.CLOSE&&item.type.equals("garage")?"Close the garage door?":question(i,label));
     }
     /** The state an action can work on: a known one, except that a button, scene or script reads `unknown` until first used and may still be activated (never a missing or unavailable entity). */
     static boolean usable(String action,EntityStates.Entity e){

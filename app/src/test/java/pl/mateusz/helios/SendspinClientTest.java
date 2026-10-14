@@ -253,7 +253,7 @@ public class SendspinClientTest {
         try{
             sink.failOpen=true;
             server.streamStart(48000);
-            assertTrue(commands.poll(3,TimeUnit.SECONDS).startsWith("failed:Nie można otworzyć wyjścia audio"));
+            assertTrue(commands.poll(3,TimeUnit.SECONDS).startsWith("failed:Could not open audio output"));
             server.audio(serverNow()+300_000,(byte)1);Thread.sleep(300);
             assertFalse(sink.open);assertNull(states.poll(200,TimeUnit.MILLISECONDS));assertEquals(SendspinClient.State.NONE,client.state());
         }finally{client.stop();server.stop(2000);}

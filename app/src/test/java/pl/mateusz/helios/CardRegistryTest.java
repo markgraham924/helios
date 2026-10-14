@@ -30,8 +30,8 @@ public class CardRegistryTest {
     @Test public void defaultIconsAreRegisteredIconsAndTitlesMatchTheOldWords(){
         // a type that exists before version 6 may only default to one of the six drawn names; a version-6 type takes any mdi: icon
         for(CardDefinition def:CardDefinition.ALL.values())if(def.defaultIcon!=null)assertTrue(def.type,def.minVersion>=6?def.defaultIcon.startsWith("mdi:"):DashboardSpec.ICONS.contains(def.defaultIcon));
-        assertEquals("",CardDefinition.of("clock").defaultTitle);assertEquals("Pogoda",CardDefinition.of("weather").defaultTitle);
-        assertEquals("Muzyka",CardDefinition.of("music").defaultTitle);assertEquals("Rolety",CardDefinition.of("cover_group").defaultTitle);
+        assertEquals("",CardDefinition.of("clock").defaultTitle);assertEquals("Weather",CardDefinition.of("weather").defaultTitle);
+        assertEquals("Music",CardDefinition.of("music").defaultTitle);assertEquals("Blinds",CardDefinition.of("cover_group").defaultTitle);
         assertNull(CardDefinition.of("light").defaultTitle);assertNull(CardDefinition.of("tile").defaultTitle);
     }
     @Test public void fieldsAreGatedByVersion(){

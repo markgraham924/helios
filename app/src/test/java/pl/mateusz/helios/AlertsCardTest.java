@@ -69,17 +69,17 @@ public class AlertsCardTest {
         List<DashboardSpec.Source> sources=Arrays.asList(src("Garaż","garaz",null),src("Śmieci","smieci",null));
         Map<String,EntityStates.Entity> st=new HashMap<>();
         AlertsModel m=new AlertsModel(sources,st,true);
-        assertEquals("-",m.count());assertEquals("Brak danych",m.idleWord());assertFalse(m.quiet());assertNull(m.footer());
+        assertEquals("-",m.count());assertEquals("No data",m.idleWord());assertFalse(m.quiet());assertNull(m.footer());
         st.put("binary_sensor.garaz_pokaz",e("off",0));st.put("binary_sensor.smieci_pokaz",e("off",0));
         m=new AlertsModel(sources,st,true);
-        assertEquals("0",m.count());assertEquals("Brak uwag",m.idleWord());assertTrue(m.quiet());
+        assertEquals("0",m.count());assertEquals("No alerts",m.idleWord());assertTrue(m.quiet());
         assertFalse("offline is never all-clear",new AlertsModel(sources,st,false).quiet());
         st.put("binary_sensor.garaz_pokaz",e("on",1000));st.remove("binary_sensor.smieci_pokaz");
         m=new AlertsModel(sources,st,true);
-        assertEquals("1",m.count());assertNull(m.idleWord());assertEquals("Brak danych: 1",m.footer());
-        assertEquals("Brak treści comes from a missing text",null,m.active.get(0).text);
-        st.put("sensor.garaz",e("Brama otwarta",0));
-        assertEquals("Brama otwarta",new AlertsModel(sources,st,true).active.get(0).text);
+        assertEquals("1",m.count());assertNull(m.idleWord());assertEquals("No data: 1",m.footer());
+        assertEquals("No content comes from a missing text",null,m.active.get(0).text);
+        st.put("sensor.garaz",e("Brama open",0));
+        assertEquals("Brama open",new AlertsModel(sources,st,true).active.get(0).text);
     }
     @Test public void newestFirstUntimedLastTiesInConfigOrderUnknownAfter(){
         List<DashboardSpec.Source> sources=new ArrayList<>();
@@ -100,8 +100,8 @@ public class AlertsCardTest {
         for(int n=0;n<12;n++){sources.add(src("S"+n,"s"+n,null));st.put("binary_sensor.s"+n+"_pokaz",e("on",1000+n));}
         AlertsModel m=new AlertsModel(sources,st,true);
         assertEquals("12",m.count());
-        List<AlertsModel.Slot> tall=m.slots(3);assertEquals(3,tall.size());assertEquals("S11",tall.get(0).title);assertEquals("+10 pozostałych",tall.get(2).title);
-        List<AlertsModel.Slot> wide=m.slots(2);assertEquals(2,wide.size());assertEquals("+11 pozostałych",wide.get(1).title);
+        List<AlertsModel.Slot> tall=m.slots(3);assertEquals(3,tall.size());assertEquals("S11",tall.get(0).title);assertEquals("+10 more",tall.get(2).title);
+        List<AlertsModel.Slot> wide=m.slots(2);assertEquals(2,wide.size());assertEquals("+11 more",wide.get(1).title);
         assertEquals("S11",m.summaryTitle());assertEquals(" +11",m.summarySuffix());
         AlertsModel three=new AlertsModel(sources.subList(0,3),st,true);
         assertEquals("three fit a tall tile without a rest line",3,three.slots(3).size());assertEquals("S2",three.slots(3).get(0).title);
@@ -110,13 +110,13 @@ public class AlertsCardTest {
     @Test public void timeLineInTheClocksZone(){
         TimeZone waw=TimeZone.getTimeZone("Europe/Warsaw");
         Calendar c=Calendar.getInstance(waw);c.clear();c.set(2026,Calendar.SEPTEMBER,25,21,0);long now=c.getTimeInMillis();
-        c.set(2026,Calendar.SEPTEMBER,25,14,32);assertEquals("Aktywne od 14:32",AlertsModel.since(c.getTimeInMillis(),now,waw));
-        c.set(2026,Calendar.SEPTEMBER,24,22,10);assertEquals("Aktywne od wczoraj 22:10",AlertsModel.since(c.getTimeInMillis(),now,waw));
-        c.set(2026,Calendar.SEPTEMBER,23,22,10);assertEquals("Aktywne od 23 wrz 22:10",AlertsModel.since(c.getTimeInMillis(),now,waw));
-        c.set(2026,Calendar.SEPTEMBER,25,0,5);assertEquals("Aktywne od 0:05",AlertsModel.since(c.getTimeInMillis(),now,waw));
+        c.set(2026,Calendar.SEPTEMBER,25,14,32);assertEquals("Active since 14:32",AlertsModel.since(c.getTimeInMillis(),now,waw));
+        c.set(2026,Calendar.SEPTEMBER,24,22,10);assertEquals("Active since yesterday 22:10",AlertsModel.since(c.getTimeInMillis(),now,waw));
+        c.set(2026,Calendar.SEPTEMBER,23,22,10);assertEquals("Active since 23 Sep 22:10",AlertsModel.since(c.getTimeInMillis(),now,waw));
+        c.set(2026,Calendar.SEPTEMBER,25,0,5);assertEquals("Active since 0:05",AlertsModel.since(c.getTimeInMillis(),now,waw));
         assertNull(AlertsModel.since(0,now,waw));
         c.set(2026,Calendar.DECEMBER,31,23,0);long nye=c.getTimeInMillis();c.set(2027,Calendar.JANUARY,1,9,0);
-        assertEquals("across the new year",AlertsModel.since(nye,c.getTimeInMillis(),waw),"Aktywne od wczoraj 23:00");
+        assertEquals("across the new year",AlertsModel.since(nye,c.getTimeInMillis(),waw),"Active since yesterday 23:00");
     }
     @Test public void lastChangedSurvivesAttributeOnlyChanges() throws Exception {
         EntityStates states=new EntityStates(Collections.singletonMap("binary_sensor.g",new HashSet<>(Collections.singletonList("friendly_name"))));
@@ -139,24 +139,24 @@ public class AlertsCardTest {
     @Test public void offGatesAndCallRules(){
         DashboardSpec.Source s=src("Światła","swiatla","light.obserwowane");
         Map<String,EntityStates.Entity> st=new HashMap<>();
-        assertEquals("Brak połączenia z Home Assistant",AlertsModel.actionBlock(s,st,false));
+        assertEquals("No connection to Home Assistant",AlertsModel.actionBlock(s,st,false));
         assertNotNull("not active",AlertsModel.actionBlock(s,st,true));
         st.put("binary_sensor.swiatla_pokaz",e("on",0));
-        assertEquals("Światła - brak danych",AlertsModel.actionBlock(s,st,true));
-        st.put("light.obserwowane",e("unavailable",0));assertEquals("Światła - brak danych",AlertsModel.actionBlock(s,st,true));
+        assertEquals("Światła - no data",AlertsModel.actionBlock(s,st,true));
+        st.put("light.obserwowane",e("unavailable",0));assertEquals("Światła - no data",AlertsModel.actionBlock(s,st,true));
         st.put("light.obserwowane",e("on",0));assertNull(AlertsModel.actionBlock(s,st,true));
         assertNotNull("no off_entity, no button",AlertsModel.actionBlock(src("G","g",null),st,true));
 
         AlertsModel.OffState o=new AlertsModel.OffState();
         int first=o.send(0);assertTrue(o.busy(0,"ACTIVE|x"));
         o.result(first,"HA nie potwierdził",  "ACTIVE|x",100);
-        assertFalse(o.busy(100,"ACTIVE|x"));assertEquals("Nie udało się zgasić",o.message("ACTIVE|x",200));
+        assertFalse(o.busy(100,"ACTIVE|x"));assertEquals("Could not turn off",o.message("ACTIVE|x",200));
         assertNull("a changed source drops the message",o.message("ACTIVE|y",300));
         int second=o.send(1000);o.result(second,null,"ACTIVE|x",1100);
         assertTrue("rests after a success",o.held());o.observe(true,5000);assertTrue(o.held());
         o.observe(true,11_100);assertFalse("10 s later it may be tapped again",o.held());
         int third=o.send(20_000);o.observe(false,20_000);
-        assertTrue(o.busy(30_000,"ACTIVE|x"));assertFalse("a lost answer frees the button by itself",o.busy(30_500,"ACTIVE|x"));assertEquals("Nie udało się zgasić",o.message("ACTIVE|x",30_600));
+        assertTrue(o.busy(30_000,"ACTIVE|x"));assertFalse("a lost answer frees the button by itself",o.busy(30_500,"ACTIVE|x"));assertEquals("Could not turn off",o.message("ACTIVE|x",30_600));
         o.result(third,null,"ACTIVE|x",31_000);assertFalse("a late answer changes nothing",o.held());
         int fourth=o.send(40_000);o.result(fourth,null,"ACTIVE|x",40_100);o.observe(false,40_200);assertFalse("the warning went: the rest ends",o.held());
         assertNull("messages expire after 10 s",o.message("ACTIVE|x",45_000));
@@ -164,32 +164,32 @@ public class AlertsCardTest {
     @Test public void descriptionReadsTheWholeTile(){
         List<DashboardSpec.Source> sources=Arrays.asList(src("Garaż","garaz",null),src("Śmieci","smieci",null));
         Map<String,EntityStates.Entity> st=new HashMap<>();st.put("binary_sensor.garaz_pokaz",e("on",0));st.put("binary_sensor.smieci_pokaz",e("on",0));
-        assertEquals("Uwagi: 2 uwagi: Garaż, Śmieci",new AlertsModel(sources,st,true).description("Uwagi"));
-        assertEquals("Uwagi: brak połączenia, dane nieaktualne",new AlertsModel(sources,st,false).description("Uwagi"));
+        assertEquals("Alerts: 2 alerts: Garaż, Śmieci",new AlertsModel(sources,st,true).description("Alerts"));
+        assertEquals("Alerts: disconnected, data is out of date",new AlertsModel(sources,st,false).description("Alerts"));
     }
     @Test public void doneEntityGivesTheRowItsOwnButton() throws Exception {
-        JSONObject item=alerts(2,1,source("Śmieci jutro","smieci").put("done_entity","input_button.helios_smieci_wyniesione").put("done_label","Wyniesione"));
+        JSONObject item=alerts(2,1,source("Śmieci jutro","smieci").put("done_entity","input_button.helios_smieci_wyniesione").put("done_label","Taken out"));
         DashboardSpec spec=DashboardSpec.parse(doc(item));
         DashboardSpec.Source s=spec.items.get(0).sources.get(0);
-        assertEquals("input_button.helios_smieci_wyniesione",s.doneEntity);assertEquals("Wyniesione",s.doneLabel);
+        assertEquals("input_button.helios_smieci_wyniesione",s.doneEntity);assertEquals("Taken out",s.doneLabel);
         assertTrue("the done target is subscribed",spec.entities().contains("input_button.helios_smieci_wyniesione"));
         AlertsModel.Action a=AlertsModel.action(s);
-        assertEquals("input_button",a.domain);assertEquals("press",a.service);assertEquals("Wyniesione",a.label);
-        assertEquals("Śmieci jutro: wyniesione?",a.question);assertEquals("Nie udało się oznaczyć",a.failure);
+        assertEquals("input_button",a.domain);assertEquals("press",a.service);assertEquals("Taken out",a.label);
+        assertEquals("Śmieci jutro: taken out?",a.question);assertEquals("Could not mark as done",a.failure);
         assertEquals("press",AlertsModel.action(new DashboardSpec.Source("B","sensor.b",null,"binary_sensor.b","on",null,true,"input_button.b",null)).service);
         assertEquals("turn_on",AlertsModel.action(new DashboardSpec.Source("B","sensor.b",null,"binary_sensor.b","on",null,true,"input_boolean.b",null)).service);
         assertEquals("the default word",AlertsModel.DEFAULT_DONE_LABEL,AlertsModel.action(new DashboardSpec.Source("B","sensor.b",null,"binary_sensor.b","on",null,true,"input_boolean.b",null)).label);
-        assertEquals("Zgaś",AlertsModel.action(src("Światła","swiatla","light.l")).label);
+        assertEquals("Turn off",AlertsModel.action(src("Światła","swiatla","light.l")).label);
         assertNull(AlertsModel.action(src("G","g",null)));
         // gates: a button reads unknown until first press and still works; missing or unavailable is refused
         Map<String,EntityStates.Entity> st=new HashMap<>();st.put("binary_sensor.smieci_pokaz",e("on",0));
-        assertEquals("Śmieci jutro - brak danych",AlertsModel.actionBlock(s,st,true));
+        assertEquals("Śmieci jutro - no data",AlertsModel.actionBlock(s,st,true));
         st.put("input_button.helios_smieci_wyniesione",e("unknown",0));assertNull(AlertsModel.actionBlock(s,st,true));
-        st.put("input_button.helios_smieci_wyniesione",e("unavailable",0));assertEquals("Śmieci jutro - brak danych",AlertsModel.actionBlock(s,st,true));
+        st.put("input_button.helios_smieci_wyniesione",e("unavailable",0));assertEquals("Śmieci jutro - no data",AlertsModel.actionBlock(s,st,true));
         st.put("input_button.helios_smieci_wyniesione",e("off",0));assertNull(AlertsModel.actionBlock(s,st,true));
-        st.put("binary_sensor.smieci_pokaz",e("off",0));assertEquals("Śmieci jutro - już nieaktywne",AlertsModel.actionBlock(s,st,true));
+        st.put("binary_sensor.smieci_pokaz",e("off",0));assertEquals("Śmieci jutro - no longer active",AlertsModel.actionBlock(s,st,true));
         AlertsModel.OffState o=new AlertsModel.OffState(a.failure);int n=o.send(0);o.result(n,"x","k",1);
-        assertEquals("Nie udało się oznaczyć",o.message("k",2));
+        assertEquals("Could not mark as done",o.message("k",2));
         // schema
         rejects(alerts(2,1,source("A","a").put("done_entity","light.a")),"done_entity domain");
         rejects(alerts(2,1,source("A","a").put("done_label","Gotowe")),"a label without an entity");

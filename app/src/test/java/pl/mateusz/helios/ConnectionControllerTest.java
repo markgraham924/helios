@@ -20,12 +20,12 @@ public class ConnectionControllerTest {
         assertNull(c.pairedWith(response(),"http://ha:8123"));
         assertEquals(Arrays.asList("save","all"),log);assertEquals(2,stored.getInt("protocol"));assertEquals("new",stored.getString("token"));
         log.clear();saveOk=false;
-        assertEquals("Nie udało się zapisać parowania - sparuj ponownie",c.pairedWith(response(),"http://ha:8123"));
+        assertEquals("Could not save pairing - pair again",c.pairedWith(response(),"http://ha:8123"));
         assertEquals("the old stored connection is cleared: a restart must not revive a retired token",Arrays.asList("save","clear","stop"),log);assertNull(stored);
         log.clear();clearOk=false;
-        assertEquals("Nie udało się zapisać parowania - sparuj ponownie",controller(new JSONObject().put("url","http://old").put("token","old")).pairedWith(response(),"http://ha:8123"));
-        assertEquals(Arrays.asList("save","clear","issue:Nie udało się wyczyścić starego parowania","stop"),log);
-        assertEquals("Niepełna odpowiedź HA",c.pairedWith(new JSONObject().put("token","x"),"http://ha:8123"));
+        assertEquals("Could not save pairing - pair again",controller(new JSONObject().put("url","http://old").put("token","old")).pairedWith(response(),"http://ha:8123"));
+        assertEquals(Arrays.asList("save","clear","issue:Could not clear previous pairing","stop"),log);
+        assertEquals("Incomplete HA response",c.pairedWith(new JSONObject().put("token","x"),"http://ha:8123"));
     }
     @Test public void connectionEventDrivesThreeMusicStatesAndMinimalRestarts() throws Exception {
         JSONObject base=new JSONObject().put("url","http://ha:8123").put("token","t").put("pipeline","p1").put("dashboard_path","helios-clock").put("protocol",2);
@@ -41,7 +41,7 @@ public class ConnectionControllerTest {
         assertEquals("connection events never change the generation",g,c.generation());
         probeError="MA odrzucił token";
         c.applyConnection(new JSONObject().put("pipeline","p2").put("music_assistant",new JSONObject(ma.toString()).put("token","bad")),g);
-        assertEquals(Arrays.asList("probe:http://ma:8095","issue:Muzyka: MA odrzucił token"),log);assertEquals("m",stored.getJSONObject("music_assistant").getString("token"));log.clear();
+        assertEquals(Arrays.asList("probe:http://ma:8095","issue:Music: MA odrzucił token"),log);assertEquals("m",stored.getJSONObject("music_assistant").getString("token"));log.clear();
         c.applyConnection(new JSONObject().put("pipeline","p2").put("music_assistant",JSONObject.NULL),g);
         assertEquals(Arrays.asList("save","music"),log);assertFalse(stored.has("music_assistant"));log.clear();
         int old=c.generation();
@@ -62,7 +62,7 @@ public class ConnectionControllerTest {
         assertEquals(Arrays.asList("save","stop"),log);assertTrue(stored.getBoolean("auth_invalid"));log.clear();
         ConnectionController d=controller(new JSONObject(base.toString()));saveOk=false;
         assertEquals(ConnectionController.SAVE_FAILED,d.markAuthInvalid(d.generation()));
-        assertEquals(Arrays.asList("save","issue:Nie udało się zapisać stanu połączenia - po restarcie zegar spróbuje raz jeszcze","stop"),log);
+        assertEquals(Arrays.asList("save","issue:Could not save connection state - the clock will retry after restarting","stop"),log);
         assertFalse("SAVE_FAILED is remembered in this process",d.startAllowed());
         log.clear();saveOk=true;
         assertNull("a later successful pairing is a clean start",d.pairedWith(response(),"http://ha:8123"));assertEquals(Arrays.asList("save","all"),log);assertFalse(stored.has("auth_invalid"));

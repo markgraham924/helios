@@ -15,12 +15,12 @@ public class ForecastTest {
 
     @Test public void validRecordParsesAndFormatsWholeDegrees(){
         Forecast f=Forecast.parse(ready(good()),NOW);
-        assertNotNull(f);assertEquals("cloudy",f.condition);assertEquals("maks. 18°C",f.max());assertEquals("min. 9°C",f.min());
+        assertNotNull(f);assertEquals("cloudy",f.condition);assertEquals("max. 18°C",f.max());assertEquals("min. 9°C",f.min());
         assertEquals(1_789_509_600_000L,f.validUntilMs);
         Map<String,String> a=good();a.remove("templow");assertNull(Forecast.parse(ready(a),NOW).min());
         a=good();a.put("templow","");assertNull(Forecast.parse(ready(a),NOW).min());
-        a=good();a.put("temperature","-2.6");a.put("temperature_unit","°F");assertEquals("maks. -3°F",Forecast.parse(ready(a),NOW).max());
-        a=good();a.put("temperature","-0.2");assertEquals("maks. 0°C",Forecast.parse(ready(a),NOW).max());
+        a=good();a.put("temperature","-2.6");a.put("temperature_unit","°F");assertEquals("max. -3°F",Forecast.parse(ready(a),NOW).max());
+        a=good();a.put("temperature","-0.2");assertEquals("max. 0°C",Forecast.parse(ready(a),NOW).max());
         a=good();a.put("valid_until","2026-09-15 22:00:00+01:00");assertNotNull(Forecast.parse(ready(a),NOW)); // space-separated ISO from HA templates (21:00Z)
     }
     @Test public void anyBrokenFieldOrExpiryMeansNoForecast(){

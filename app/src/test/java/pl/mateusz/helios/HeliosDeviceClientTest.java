@@ -124,7 +124,7 @@ public class HeliosDeviceClientTest {
             server.connects.clear();
             server.sendEvent(server.connectId,new JSONObject().put("type","replaced"));
             assertEquals("null/null",devices.poll(5,TimeUnit.SECONDS));
-            assertEquals("Inne urządzenie przejęło to parowanie",issues.poll(2,TimeUnit.SECONDS));
+            assertEquals("Another device took over this pairing",issues.poll(2,TimeUnit.SECONDS));
             assertNull("no resubscribe after replaced",server.connects.poll(3,TimeUnit.SECONDS));
         }finally{client.stop();ha.stop();server.stop(2000);}
     }
@@ -165,7 +165,7 @@ public class HeliosDeviceClientTest {
         client.start();ha.start();
         try{
             assertNotNull(server.connects.poll(5,TimeUnit.SECONDS));
-            assertEquals("Zegar usunięty z HA - sparuj ponownie",issues.poll(5,TimeUnit.SECONDS));
+            assertEquals("Clock removed from HA - pair again",issues.poll(5,TimeUnit.SECONDS));
             assertNull(server.connects.poll(3,TimeUnit.SECONDS));
         }finally{client.stop();ha.stop();server.stop(2000);}
     }

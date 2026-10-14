@@ -89,8 +89,8 @@ public class MusicAssistantClientTest {
         MusicAssistantClient client=client("secret");
         try{
             assertEquals("up:connected",connections.poll(5,TimeUnit.SECONDS));
-            assertEquals("err:Wpisz od 2 do 100 znaków",outcome((ok,fail)->client.search("a",ok::accept,fail)));
-            assertEquals("err:Wpisz od 2 do 100 znaków",outcome((ok,fail)->client.search(new String(new char[101]).replace('\0','x'),ok::accept,fail)));
+            assertEquals("err:Enter 2 to 100 characters",outcome((ok,fail)->client.search("a",ok::accept,fail)));
+            assertEquals("err:Enter 2 to 100 characters",outcome((ok,fail)->client.search(new String(new char[101]).replace('\0','x'),ok::accept,fail)));
             server.requests.clear();
             assertNull(server.requests.poll(300,TimeUnit.MILLISECONDS));
             String ok=outcome((o,f)->client.search("beat",o::accept,f));
@@ -114,7 +114,7 @@ public class MusicAssistantClientTest {
             String second=outcome((ok,fail)->client.activeQueue("p1",q->ok.accept(q.optString("state")),fail));
             assertEquals("ok:paused",second);assertEquals("superseded",first.poll(1,TimeUnit.SECONDS));
             server.noQueue=true;
-            assertEquals("err:Brak kolejki",outcome((ok,fail)->client.activeQueue("p1",ok::accept,fail)));
+            assertEquals("err:No queue",outcome((ok,fail)->client.activeQueue("p1",ok::accept,fail)));
             server.client.send(new JSONObject().put("event","queue_updated").put("object_id","p1").put("data",new JSONObject().put("queue_id","p1").put("state","idle")).toString());
             assertEquals("idle",queues.poll(3,TimeUnit.SECONDS).getString("state"));
             server.silentCmd=false;
@@ -136,9 +136,9 @@ public class MusicAssistantClientTest {
             BlockingQueue<String> pause=new LinkedBlockingQueue<>();
             client.playerCommand("p1","pause",r->pause.add("ok"),pause::add);
             Thread.sleep(100);
-            assertEquals("err:Poprzednie polecenie jeszcze trwa",outcome((ok,fail)->client.volume("p1",40,ok,fail)));
+            assertEquals("err:Previous command is still running",outcome((ok,fail)->client.volume("p1",40,ok,fail)));
             assertEquals("ok:null",outcome((ok,fail)->client.playerCommand("p1","stop",ok,fail)));
-            assertTrue(pause.poll(3,TimeUnit.SECONDS).contains("nie odpowiedział"));
+            assertTrue(pause.poll(3,TimeUnit.SECONDS).contains("did not respond"));
             server.silentCmd=false;
             assertEquals("ok:null",outcome((ok,fail)->client.volume("p1",40,ok,fail)));
             assertEquals(40,server.request("players/cmd/volume_set").getJSONObject("args").getInt("volume_level"));
@@ -147,7 +147,7 @@ public class MusicAssistantClientTest {
             assertTrue(outcome((ok,fail)->client.playerCommand("p1","eject",ok,fail)).startsWith("err:"));
             server.client.close(1001,"drop");
             String down=connections.poll(5,TimeUnit.SECONDS);assertTrue(down,down.startsWith("down:"));
-            assertEquals("err:Brak połączenia z Music Assistant",outcome((ok,fail)->client.players(r->ok.accept(r),fail)));
+            assertEquals("err:No connection to Music Assistant",outcome((ok,fail)->client.players(r->ok.accept(r),fail)));
             assertEquals("up:connected",connections.poll(7,TimeUnit.SECONDS));
         }finally{MusicAssistantClient.TIMEOUT_MS=previous;client.stop();server.stop(2000);}
     }

@@ -38,11 +38,11 @@ final class PairingClient {
     }
     static String message(int status){
         switch(status){
-            case 401:return "Kod nieprawidłowy lub wygasł";
-            case 409:return "HA nie dokończył parowania - spróbuj ponownie";
-            case 503:return "HA nie jest gotowy (brak pipeline Assist lub błąd tożsamości)";
-            case -1:return "Brak połączenia z HA";
-            default:return "HA odpowiedział błędem "+status;
+            case 401:return "Code is invalid or expired";
+            case 409:return "HA did not complete pairing - try again";
+            case 503:return "HA is not ready (no Assist pipeline or identity error)";
+            case -1:return "No connection to HA";
+            default:return "HA returned error "+status;
         }
     }
 }

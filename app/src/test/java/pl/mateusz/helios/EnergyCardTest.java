@@ -45,20 +45,20 @@ public class EnergyCardTest {
         rejects(energy(false).put("tap_action",new JSONObject().put("action","toggle")),"a tap on a read-only tile");
         rejects(DashboardSpecV6Test.tile("t","sensor.x",1,1).put("load_entity","sensor.y"),"load_entity on a tile");
         JSONObject v5=DashboardSpecTest.example().put("version",5);v5.getJSONArray("items").put(energy(false));
-        try{DashboardSpec.parse(v5);fail("energy at version 5");}catch(IllegalArgumentException e){assertEquals("Typ energy wymaga version: 6",e.getMessage());}
+        try{DashboardSpec.parse(v5);fail("energy at version 5");}catch(IllegalArgumentException e){assertEquals("Type energy requires version: 6",e.getMessage());}
     }
     @Test public void productionSlashLoadOnTopAndTheBatteryBigUnderIt() throws Exception {
         DashboardSpec.Item i=DashboardSpec.parse(doc(energy(true))).items.get(0);
         Map<String,EntityStates.Entity> s=new HashMap<>();
         s.put("sensor.pv_power",state("1504","W"));s.put("sensor.house_load",state("698.4","W"));s.put("sensor.battery_soc",state("68","%"));
         CardBodies.CardContent c=CardBodies.FOR.get("energy").render(i,s,true,ENV);
-        assertEquals("1504 / 698,4 W",c.label);assertEquals("68 %",c.value);assertEquals("",c.detail);assertEquals("mdi:battery-70",c.valueIcon);
-        assertEquals("PV: produkcja 1504 W, dom 698,4 W, bateria 68 %",c.description);
+        assertEquals("1504 / 698.4 W",c.label);assertEquals("68 %",c.value);assertEquals("",c.detail);assertEquals("mdi:battery-70",c.valueIcon);
+        assertEquals("PV: generation 1504 W, home 698.4 W, battery 68 %",c.description);
         s.put("sensor.house_load",state("0.7","kW"));
-        assertEquals("1504 W / 0,7 kW",CardBodies.FOR.get("energy").render(i,s,true,ENV).label); // different units: each its own
+        assertEquals("1504 W / 0.7 kW",CardBodies.FOR.get("energy").render(i,s,true,ENV).label); // different units: each its own
         s.put("sensor.battery_soc",state("unavailable","%"));s.remove("sensor.house_load");
         c=CardBodies.FOR.get("energy").render(i,s,false,ENV);
-        assertEquals("1504 W / —",c.label);assertEquals("—",c.value);assertTrue(c.description.endsWith("dane nieaktualne"));
+        assertEquals("1504 W / —",c.label);assertEquals("—",c.value);assertTrue(c.description.endsWith("data is out of date"));
         DashboardSpec.Item noBattery=DashboardSpec.parse(doc(energy(false))).items.get(0);
         s.put("sensor.house_load",state("742","W"));
         c=CardBodies.FOR.get("energy").render(noBattery,s,true,ENV);

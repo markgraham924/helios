@@ -1,23 +1,23 @@
 package pl.mateusz.helios;
 public final class WeatherLabels {
     private WeatherLabels(){}
-    public static String polish(String state){
+    public static String english(String state){
         switch(state){
-            case "clear-night":return "Pogodna noc";
-            case "cloudy":return "Pochmurno";
-            case "fog":return "Mgła";
-            case "hail":return "Grad";
-            case "lightning":return "Burza";
-            case "lightning-rainy":return "Burza z deszczem";
-            case "partlycloudy":return "Częściowe zachmurzenie";
-            case "pouring":return "Ulewa";
-            case "rainy":return "Deszcz";
-            case "snowy":return "Śnieg";
-            case "snowy-rainy":return "Deszcz ze śniegiem";
-            case "sunny":return "Słonecznie";
-            case "windy":case "windy-variant":return "Wietrznie";
-            case "exceptional":return "Nietypowe warunki";
-            default:return "Brak opisu pogody";
+            case "clear-night":return "Clear night";
+            case "cloudy":return "Cloudy";
+            case "fog":return "Fog";
+            case "hail":return "Hail";
+            case "lightning":return "Thunderstorm";
+            case "lightning-rainy":return "Thunderstorm with rain";
+            case "partlycloudy":return "Partly cloudy";
+            case "pouring":return "Heavy rain";
+            case "rainy":return "Rain";
+            case "snowy":return "Snow";
+            case "snowy-rainy":return "Sleet";
+            case "sunny":return "Sunny";
+            case "windy":case "windy-variant":return "Windy";
+            case "exceptional":return "Exceptional conditions";
+            default:return "No weather description";
         }
     }
     /** The Material Design icon Home Assistant itself uses for a weather condition; an unknown condition gets none. */

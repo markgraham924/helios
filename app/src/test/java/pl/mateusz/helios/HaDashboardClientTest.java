@@ -61,7 +61,7 @@ public class HaDashboardClientTest {
                     calls.add(request);
                     if(ignoreCalls)return;
                     JSONObject response=new JSONObject().put("id",id).put("type","result").put("success",!rejectCalls);
-                    if(rejectCalls)response.put("error",new JSONObject().put("code","not_found").put("message","Encja nie istnieje"));
+                    if(rejectCalls)response.put("error",new JSONObject().put("code","not_found").put("message","Entity nie istnieje"));
                     ws.send(response.toString());return;
                 }
                 if(type.equals("helios/connect")){
@@ -72,7 +72,7 @@ public class HaDashboardClientTest {
                 }
                 if(type.equals("helios/state")||type.equals("helios/result")){
                     device.add(request);
-                    if(stateUnauthorized){ws.send(new JSONObject().put("id",id).put("type","result").put("success",false).put("error",new JSONObject().put("code","unauthorized").put("message","Brak aktywnej subskrypcji")).toString());return;}
+                    if(stateUnauthorized){ws.send(new JSONObject().put("id",id).put("type","result").put("success",false).put("error",new JSONObject().put("code","unauthorized").put("message","Brak activej subskrypcji")).toString());return;}
                     ws.send(new JSONObject().put("id",id).put("type","result").put("success",true).toString());return;
                 }
                 if(type.equals("helios/echo")){custom.add(request);ws.send(new JSONObject().put("id",id).put("type","result").put("success",true).put("result",request.opt("value")).toString());return;}
@@ -177,14 +177,14 @@ public class HaDashboardClientTest {
             assertEquals("ok",call(client,"light","toggle","light.first"));
             JSONObject sent=server.calls.poll(5,TimeUnit.SECONDS);
             assertEquals("call_service",sent.getString("type"));assertEquals("light",sent.getString("domain"));assertEquals("toggle",sent.getString("service"));assertEquals("light.first",sent.getJSONObject("target").getString("entity_id"));
-            server.rejectCalls=true;assertEquals("Encja nie istnieje",call(client,"cover","close_cover","cover.x"));
+            server.rejectCalls=true;assertEquals("Entity nie istnieje",call(client,"cover","close_cover","cover.x"));
             server.rejectCalls=false;server.ignoreCalls=true;
-            assertTrue(call(client,"light","toggle","light.first").contains("nie potwierdził"));
+            assertTrue(call(client,"light","toggle","light.first").contains("did not confirm"));
             BlockingQueue<String> result=new LinkedBlockingQueue<>();
             client.callService("light","toggle","light.first",error->result.add(error==null?"ok":error));
             assertNotNull(server.calls.poll(5,TimeUnit.SECONDS));
             server.client.close(1001,"Test disconnect");
-            assertEquals("Połączenie z HA przerwane",result.poll(5,TimeUnit.SECONDS));
+            assertEquals("HA connection lost",result.poll(5,TimeUnit.SECONDS));
             assertNotNull(errors.poll(5,TimeUnit.SECONDS));
             server.ignoreCalls=false;
             assertNull(dashboard().issue);assertEquals("ok",call(client,"light","toggle","light.first"));
@@ -252,7 +252,7 @@ public class HaDashboardClientTest {
             assertEquals("started",sessions.poll(7,TimeUnit.SECONDS));
             server.rejectToken=true;server.client.close(1001,"drop");
             assertEquals("invalid",auth.poll(7,TimeUnit.SECONDS));
-            assertTrue(errors.stream().anyMatch(e->e.contains("odrzucił token")));
+            assertTrue(errors.stream().anyMatch(e->e.contains("rejected the token")));
             int opens=server.opens.get();Thread.sleep(3000);
             assertEquals("no reconnect after auth_invalid",opens,server.opens.get());assertFalse(client.live());assertNull(auth.poll(200,TimeUnit.MILLISECONDS));
         }finally{client.stop();server.stop(2000);}

@@ -34,23 +34,23 @@ final class CardDefinition {
         LinkedHashMap<String,CardDefinition> all=new LinkedHashMap<>();
         for(CardDefinition d:new CardDefinition[]{
             new CardDefinition("clock",2,fields(),null,null,null,false,false,false,false,false,null,"",NONE,Layout.CLOCK,Gate.NONE,Feed.CLOCK),
-            new CardDefinition("weather",2,fields("entity",2,"temperature_entity",2,"forecast_entity",4,"forecast_when",4),"weather",null,null,false,false,false,false,false,null,"Pogoda",DashboardSpec.WEATHER_ATTRIBUTES,Layout.LARGE_VALUE,Gate.NONE,Feed.ENTITIES),
+            new CardDefinition("weather",2,fields("entity",2,"temperature_entity",2,"forecast_entity",4,"forecast_when",4),"weather",null,null,false,false,false,false,false,null,"Weather",DashboardSpec.WEATHER_ATTRIBUTES,Layout.LARGE_VALUE,Gate.NONE,Feed.ENTITIES),
             // schema 5: a read-only tile that may turn its lights off, tappable and confirmed only with off_entity (docs/ha-dashboard.md)
             new CardDefinition("entity",2,fields("entity",2,"attribute",2,"icon",2,"off_entity",5),"","lights_off","off_entity",false,true,true,false,true,"information",null,NONE,Layout.FIT,Gate.NONE,Feed.ENTITIES),
             new CardDefinition("light",2,fields("entity",2,"icon",2),"light","toggle",null,false,true,false,false,false,"lightbulb",null,NONE,Layout.FIT,Gate.KNOWN_NOT_PENDING,Feed.ENTITIES),
             new CardDefinition("cover",2,fields("entity",2,"icon",2),"cover","controls",null,false,true,false,false,false,"window-shutter",null,DashboardSpec.COVER_ATTRIBUTES,Layout.FIT,Gate.KNOWN,Feed.ENTITIES),
             new CardDefinition("garage",2,fields("entity",2,"icon",2),"cover","close",null,false,true,true,false,false,"garage-open",null,DashboardSpec.COVER_ATTRIBUTES,Layout.FIT,Gate.KNOWN_NOT_PENDING,Feed.ENTITIES),
-            new CardDefinition("music",3,fields("icon",3),null,"library",null,false,false,false,true,false,"music","Muzyka",NONE,Layout.FIT,Gate.NONE,Feed.MUSIC),
-            new CardDefinition("cover_group",4,fields("covers",4,"icon",4),null,"covers",null,false,false,false,false,false,"window-shutter","Rolety",NONE,Layout.FIT,Gate.NONE,Feed.ENTITIES),
+            new CardDefinition("music",3,fields("icon",3),null,"library",null,false,false,false,true,false,"music","Music",NONE,Layout.FIT,Gate.NONE,Feed.MUSIC),
+            new CardDefinition("cover_group",4,fields("covers",4,"icon",4),null,"covers",null,false,false,false,false,false,"window-shutter","Blinds",NONE,Layout.FIT,Gate.NONE,Feed.ENTITIES),
             // schema 6: one entity of any domain, an intent from ActionPolicy instead of a fixed action, an mdi: icon by domain when none is set
             new CardDefinition("tile",6,fields("entity",6,"icon",6,"attribute",6),"",null,null,true,true,false,false,true,null,null,DashboardSpec.TILE_ATTRIBUTES,Layout.FIT,Gate.NONE,Feed.ENTITIES),
             // SPEC 0.17: read-only energy summary - PV power as the value, the house and (optionally) the battery under it
             // SPEC 0.19: a climate entity - measured temperature big, the setpoint under it; the tap opens the full control panel
             new CardDefinition("climate",6,fields("entity",6,"icon",6),"climate","climate",null,false,false,false,false,false,null,null,ClimateModel.ATTRIBUTES,Layout.BIG_FIT,Gate.KNOWN,Feed.ENTITIES),
             // SPEC 0.20: every warning in one tile - the count and the newest few; the tap slides the full list in; a stand-in card while none applies
-            new CardDefinition("alerts",6,fields("sources",6,"empty",6),null,"alerts",null,false,false,false,false,false,null,"Uwagi",NONE,Layout.FIT,Gate.NONE,Feed.ENTITIES),
+            new CardDefinition("alerts",6,fields("sources",6,"empty",6),null,"alerts",null,false,false,false,false,false,null,"Alerts",NONE,Layout.FIT,Gate.NONE,Feed.ENTITIES),
             new CardDefinition("energy",6,fields("entity",6,"load_entity",6,"battery_entity",6,"icon",6),"sensor",null,null,false,false,false,false,false,"mdi:solar-power","PV",DashboardSpec.UNIT_ATTRIBUTES,Layout.BIG_FIT,Gate.NONE,Feed.ENTITIES),
-            new CardDefinition("entities",6,fields("entries",6,"icon",6),null,null,null,false,false,false,false,false,"mdi:format-list-bulleted","Odczyty",DashboardSpec.TILE_ATTRIBUTES,Layout.ROWS,Gate.NONE,Feed.ENTITIES),
+            new CardDefinition("entities",6,fields("entries",6,"icon",6),null,null,null,false,false,false,false,false,"mdi:format-list-bulleted","Readings",DashboardSpec.TILE_ATTRIBUTES,Layout.ROWS,Gate.NONE,Feed.ENTITIES),
         })all.put(d.type,d);
         ALL=Collections.unmodifiableMap(all);
         Set<String> known=new HashSet<>();for(CardDefinition d:all.values())known.addAll(d.fields.keySet());

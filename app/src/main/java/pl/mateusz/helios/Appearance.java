@@ -58,34 +58,34 @@ final class Appearance {
     String key(){return image?imageId+"|"+focusX+"|"+focusY:"";}
     /** Strict whole-object parse; any problem throws IllegalArgumentException and the caller keeps its last good appearance. */
     static Appearance parse(JSONObject a){
-        if(a==null)throw new IllegalArgumentException("brak obiektu");
+        if(a==null)throw new IllegalArgumentException("missing object");
         int version=a.optInt("version",-1);
-        if(version!=1&&version!=2)throw new IllegalArgumentException("nieznana wersja");
+        if(version!=1&&version!=2)throw new IllegalArgumentException("unknown version");
         // v2 adds one optional block; a clock that gets v1 keeps the 0.13 behaviour without being told
-        if(a.length()!=3&&!(version==2&&a.length()==4&&a.has("screensaver")))throw new IllegalArgumentException("nieznane pola");
+        if(a.length()!=3&&!(version==2&&a.length()==4&&a.has("screensaver")))throw new IllegalArgumentException("unknown fields");
         String theme=a.optString("theme","");
-        if(Theme.byId(theme)==null)throw new IllegalArgumentException("nieznany motyw");
+        if(Theme.byId(theme)==null)throw new IllegalArgumentException("unknown theme");
         JSONObject b=a.optJSONObject("background");
-        if(b==null)throw new IllegalArgumentException("brak tła");
+        if(b==null)throw new IllegalArgumentException("missing background");
         Screensaver screensaver=Screensaver.parse(a.optJSONObject("screensaver"));
         String type=b.optString("type","");
         if(type.equals("solid")){
-            if(b.length()!=1)throw new IllegalArgumentException("zbędne pola tła");
+            if(b.length()!=1)throw new IllegalArgumentException("unexpected background fields");
             return new Appearance(theme,false,null,null,0,50,50).with(screensaver);
         }
-        if(!type.equals("image")||b.length()!=6)throw new IllegalArgumentException("nieznany typ tła");
+        if(!type.equals("image")||b.length()!=6)throw new IllegalArgumentException("unknown background type");
         String id=b.optString("image_id","");
-        if(!id.matches("[a-f0-9]{64}"))throw new IllegalArgumentException("zły image_id");
+        if(!id.matches("[a-f0-9]{64}"))throw new IllegalArgumentException("invalid image_id");
         String path=b.optString("path","");
-        if(!path.startsWith(PATH_PREFIX)||path.contains("..")||!path.endsWith("/"+id))throw new IllegalArgumentException("zła ścieżka");
+        if(!path.startsWith(PATH_PREFIX)||path.contains("..")||!path.endsWith("/"+id))throw new IllegalArgumentException("invalid path");
         String entry=path.substring(PATH_PREFIX.length(),path.length()-id.length()-1);
-        if(!entry.matches("[A-Za-z0-9_-]+"))throw new IllegalArgumentException("zła ścieżka");
+        if(!entry.matches("[A-Za-z0-9_-]+"))throw new IllegalArgumentException("invalid path");
         int dim=integer(b,"dim",DIM_MIN,DIM_MAX),fx=integer(b,"focus_x",0,100),fy=integer(b,"focus_y",0,100);
         return new Appearance(theme,true,id,path,dim,fx,fy,screensaver);
     }
     private static int integer(JSONObject o,String key,int low,int high){
         Object v=o.opt(key);
-        if(!(v instanceof Integer)||(Integer)v<low||(Integer)v>high)throw new IllegalArgumentException(key+" poza zakresem");
+        if(!(v instanceof Integer)||(Integer)v<low||(Integer)v>high)throw new IllegalArgumentException(key+" out of range");
         return (Integer)v;
     }
 }

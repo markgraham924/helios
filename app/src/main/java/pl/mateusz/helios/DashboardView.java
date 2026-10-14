@@ -220,8 +220,8 @@ public final class DashboardView extends FrameLayout {
     public void setIssue(String issue){this.issue=issue;refreshStatus();}
     public void setMessage(String message){this.message=message==null?"":message;refreshStatus();}
     private void refreshStatus(){Theme t=Theme.current();status.setText(issue!=null?issue:message);status.setTextColor(issue!=null?t.accent:t.muted);}
-    public void connected(boolean value){haConnected=value;connection.setImageTintList(ColorStateList.valueOf(value?Theme.HA_CONNECTED:Theme.current().muted));connection.setContentDescription(value?"Home Assistant: połączono":"Home Assistant: brak aktualnego połączenia");}
-    public void onBrandHold(Runnable action){brand.setContentDescription("Helios. Przytrzymaj, aby otworzyć menu.");brand.setOnLongClickListener(v->{action.run();return true;});}
+    public void connected(boolean value){haConnected=value;connection.setImageTintList(ColorStateList.valueOf(value?Theme.HA_CONNECTED:Theme.current().muted));connection.setContentDescription(value?"Home Assistant: connected":"Home Assistant: disconnected");}
+    public void onBrandHold(Runnable action){brand.setContentDescription("Helios. Press and hold to open the menu.");brand.setOnLongClickListener(v->{action.run();return true;});}
     /** Calls in flight by item id, kept apart from the views: a page rebuilt mid-call shows its spinner again. */
     private final Set<String> pendingIds=new HashSet<>();
     public void pending(String id,boolean on){if(on)pendingIds.add(id);else pendingIds.remove(id);Tile t=tiles.get(id);if(t!=null)t.pending(on);}

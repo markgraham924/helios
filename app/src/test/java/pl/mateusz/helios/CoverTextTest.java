@@ -8,15 +8,15 @@ public class CoverTextTest {
     static EntityStates.Entity e(String state,String... attrs){Map<String,String> a=new HashMap<>();for(int i=0;i+1<attrs.length;i+=2)a.put(attrs[i],attrs[i+1]);return new EntityStates.Entity(state,a);}
 
     @Test public void statesBecomePolishLinesAndPositionOnlyWhenOpen(){
-        assertEquals("A: zamknięta",CoverText.line("A",e("closed","current_position","0")));
+        assertEquals("A: closed",CoverText.line("A",e("closed","current_position","0")));
         assertEquals("B: 40%",CoverText.line("B",e("open","current_position","40.0")));
-        assertEquals("B: otwarta",CoverText.line("B",e("open")));
-        assertEquals("A: otwieranie",CoverText.line("A",e("opening","current_position","30")));
-        assertEquals("A: zamykanie",CoverText.line("A",e("closing")));
-        assertEquals("A: brak danych",CoverText.line("A",e("unavailable","current_position","50")));
-        assertEquals("A: brak danych",CoverText.line("A",e("unknown")));
-        assertEquals("A: brak danych",CoverText.line("A",null));
-        assertEquals("B: otwarta",CoverText.line("B",e("open","current_position","many")));
+        assertEquals("B: open",CoverText.line("B",e("open")));
+        assertEquals("A: opening",CoverText.line("A",e("opening","current_position","30")));
+        assertEquals("A: closing",CoverText.line("A",e("closing")));
+        assertEquals("A: no data",CoverText.line("A",e("unavailable","current_position","50")));
+        assertEquals("A: no data",CoverText.line("A",e("unknown")));
+        assertEquals("A: no data",CoverText.line("A",null));
+        assertEquals("B: open",CoverText.line("B",e("open","current_position","many")));
     }
     @Test public void attentionAndFeatureBits(){
         assertTrue(CoverText.attention(e("open")));assertTrue(CoverText.attention(e("closing")));

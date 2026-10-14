@@ -31,11 +31,11 @@ final class CardBodies {
         CardContent(String value,String detail,String detail2,String label,String icon,String description,boolean accent,long expiresAt,Side side,List<Row> rows){this.value=value;this.detail=detail;this.detail2=detail2;this.label=label;this.icon=icon;this.description=description;this.accent=accent;this.expiresAt=expiresAt;this.side=side;this.rows=Collections.unmodifiableList(new ArrayList<>(rows));}
         CardContent(String value,String detail,String label,boolean accent,long expiresAt,DashboardSpec.Item item,boolean live){this(value,detail,label,null,accent,expiresAt,item,live);}
         CardContent(String value,String detail,String label,String icon,boolean accent,long expiresAt,DashboardSpec.Item item,boolean live){
-            this(value,detail,"",label,icon,(label!=null?label:defaultLabel(item))+": "+value+(detail.isEmpty()?"":", "+detail)+(live?"":", dane nieaktualne"),accent,expiresAt);
+            this(value,detail,"",label,icon,(label!=null?label:defaultLabel(item))+": "+value+(detail.isEmpty()?"":", "+detail)+(live?"":", data is out of date"),accent,expiresAt);
         }
         CardContent(String value,String detail,String label,String icon,boolean accent,long expiresAt,DashboardSpec.Item item,boolean live,Side side){
             this(value,detail,"",label,icon,(label!=null?label:defaultLabel(item))+": "+value+(detail.isEmpty()?"":", "+detail)
-                +(side==null?"":", jutro "+side.value+(side.detail.isEmpty()?"":" "+side.detail))+(live?"":", dane nieaktualne"),accent,expiresAt,side);
+                +(side==null?"":", tomorrow "+side.value+(side.detail.isEmpty()?"":" "+side.detail))+(live?"":", data is out of date"),accent,expiresAt,side);
         }
     }
     interface Body {CardContent render(DashboardSpec.Item item,Map<String,EntityStates.Entity> states,boolean live,Env env);}
@@ -49,23 +49,23 @@ final class CardBodies {
         m.put("entity",(item,states,live,env)->{
             EntityStates.Entity e=states.get(item.entity);
             String v=e==null||!e.known()?null:item.attribute==null?e.state:e.attribute(item.attribute);
-            return new CardContent(v==null?"Brak danych":v,"",null,false,0,item,live);
+            return new CardContent(v==null?"No data":v,"",null,false,0,item,live);
         });
         m.put("light",(item,states,live,env)->{
             EntityStates.Entity e=states.get(item.entity);boolean known=e!=null&&e.known();
-            String text=!known?"Brak danych":e.state.equals("on")?"Włączone":e.state.equals("off")?"Wyłączone":e.state;
+            String text=!known?"No data":e.state.equals("on")?"On":e.state.equals("off")?"Off":e.state;
             return new CardContent(text,"",null,known&&e.state.equals("on"),0,item,live);
         });
         m.put("energy",CardBodies::energy);
         m.put("climate",CardBodies::climate);
         m.put("cover",CardBodies::cover);
         m.put("garage",CardBodies::cover);
-        m.put("music",(item,states,live,env)->new CardContent(env.musicInfo(),"","",null,null,"Muzyka: "+env.musicInfo(),false,0)); // the player, not HA, says whether this is live
+        m.put("music",(item,states,live,env)->new CardContent(env.musicInfo(),"","",null,null,"Music: "+env.musicInfo(),false,0)); // the player, not HA, says whether this is live
         m.put("cover_group",(item,states,live,env)->{
             DashboardSpec.Cover ca=item.covers.get(0),cb=item.covers.get(1);
             EntityStates.Entity a=states.get(ca.entity),b=states.get(cb.entity);
             String label=defaultLabel(item);
-            return new CardContent(CoverText.line("A",a),CoverText.line("B",b),"",null,null,label+": "+ca.title+": "+CoverText.state(a)+", "+cb.title+": "+CoverText.state(b)+(live?"":", dane nieaktualne"),CoverText.attention(a)||CoverText.attention(b),0);
+            return new CardContent(CoverText.line("A",a),CoverText.line("B",b),"",null,null,label+": "+ca.title+": "+CoverText.state(a)+", "+cb.title+": "+CoverText.state(b)+(live?"":", data is out of date"),CoverText.attention(a)||CoverText.attention(b),0);
         });
         m.put("tile",CardBodies::tile);
         m.put("entities",CardBodies::entities);
@@ -78,18 +78,18 @@ final class CardBodies {
     }
     private static CardContent cover(DashboardSpec.Item item,Map<String,EntityStates.Entity> states,boolean live,Env env){
         EntityStates.Entity e=states.get(item.entity);boolean known=e!=null&&e.known();
-        String text=!known?"Brak danych":coverState(e.state),extra="";
-        if(known&&e.attribute("current_position")!=null)extra="Otwarcie "+number(e.attribute("current_position"),"%");
+        String text=!known?"No data":coverState(e.state),extra="";
+        if(known&&e.attribute("current_position")!=null)extra="Opening "+number(e.attribute("current_position"),"%");
         return new CardContent(text,extra,null,known&&!e.state.equals("closed"),0,item,live);
     }
     private static CardContent weather(DashboardSpec.Item item,Map<String,EntityStates.Entity> states,boolean live,Env env){
         if(item.forecast()){
             Forecast.Mode mode=Forecast.mode(states.get(item.forecastWhenEntity),item.forecastWhenState);
-            if(mode==Forecast.Mode.UNKNOWN)return new CardContent("—","brak danych o trybie",null,false,0,item,live);
+            if(mode==Forecast.Mode.UNKNOWN)return new CardContent("—","no mode data",null,false,0,item,live);
             if(mode==Forecast.Mode.TOMORROW){
                 Forecast f=Forecast.parse(states.get(item.forecastEntity),env.now());
-                if(f==null)return new CardContent("—","brak prognozy","Jutro",false,0,item,live);
-                return new CardContent(f.max(),WeatherLabels.polish(f.condition)+(f.min()==null?"":" · "+f.min()),"Jutro",false,f.validUntilMs,item,live);
+                if(f==null)return new CardContent("—","no forecast","Tomorrow",false,0,item,live);
+                return new CardContent(f.max(),WeatherLabels.english(f.condition)+(f.min()==null?"":" · "+f.min()),"Tomorrow",false,f.validUntilMs,item,live);
             }
         }
         EntityStates.Entity e=states.get(item.entity);boolean known=e!=null&&e.known();
@@ -99,7 +99,7 @@ final class CardBodies {
         String text=number(temperature,unit); // no unit in HA means no unit on screen (SPEC 0.8a pkt 3.3)
         String wind=known?e.attribute("wind_speed"):null;
         String windText=wind==null?"":number(wind,e.attribute("wind_speed_unit")==null?"":" "+e.attribute("wind_speed_unit"));
-        String condition=known?WeatherLabels.polish(e.state):"Brak danych";
+        String condition=known?WeatherLabels.english(e.state):"No data";
         // A wide tile puts tomorrow beside today; the forecast comes from HA's own daily feed, so nothing has to be configured.
         Tomorrow t=item.width>1?env.tomorrow():null;
         if(t!=null&&t.entity!=null&&!t.entity.equals(item.entity))t=null; // one forecast feed, for one weather entity: another page's tile shows today only
@@ -108,8 +108,8 @@ final class CardBodies {
         // under the temperature. The description keeps the word, because a screen reader has no icon to read.
         String night=t==null?"":t.night(); // tonight's low before the wind, where the second half makes room for it
         String extra=side!=null?night+(night.isEmpty()||windText.isEmpty()?"":" · ")+windText:condition+(windText.isEmpty()?"":" · "+windText);
-        String spoken=defaultLabel(item)+": "+text+", "+condition+(night.isEmpty()?"":", w nocy "+night.substring(2))+(windText.isEmpty()?"":", "+windText)
-            +(side==null?"":", jutro "+side.value+(side.detail.isEmpty()?"":" "+side.detail))+(live?"":", dane nieaktualne");
+        String spoken=defaultLabel(item)+": "+text+", "+condition+(night.isEmpty()?"":", at night "+night.substring(2))+(windText.isEmpty()?"":", "+windText)
+            +(side==null?"":", tomorrow "+side.value+(side.detail.isEmpty()?"":" "+side.detail))+(live?"":", data is out of date");
         return new CardContent(text,extra,"",item.title,known?WeatherLabels.icon(e.state):null,spoken,false,0,side);
     }
     private static final List<String> ACTIVE=Arrays.asList("on","open","opening","closing","unlocked","unlocking","playing","heating","cooling","cleaning","running");
@@ -118,8 +118,8 @@ final class CardBodies {
         EntityStates.Entity e=states.get(item.entity);boolean known=e!=null&&e.known();
         String domain=item.entity.substring(0,item.entity.indexOf('.'));
         String text;
-        if(!known)text=ActionPolicy.usable("activate",e)&&ActionPolicy.defaultIntent(domain)==ActionPolicy.Intent.ACTIVATE?"—":"Brak danych"; // a scene or button reads unknown until first used, and still works
-        else if(item.attribute!=null){String a=e.attribute(item.attribute);text=a==null?"Brak danych":a;}
+        if(!known)text=ActionPolicy.usable("activate",e)&&ActionPolicy.defaultIntent(domain)==ActionPolicy.Intent.ACTIVATE?"—":"No data"; // a scene or button reads unknown until first used, and still works
+        else if(item.attribute!=null){String a=e.attribute(item.attribute);text=a==null?"No data":a;}
         else text=stateText(domain,e);
         String label=item.title!=null?item.title:known&&e.attribute("friendly_name")!=null?e.attribute("friendly_name"):null;
         String icon=known&&!item.ownIcon?e.attribute("icon"):null; // the entity's icon only fills in for a config that named none
@@ -135,10 +135,10 @@ final class CardBodies {
             String label=entry.title!=null?entry.title:friendly!=null&&!friendly.trim().isEmpty()?friendly:entityLabel(entry.entity);
             String value=reading(entry.entity,entity);
             if(!rows.isEmpty())description.append(", ");
-            description.append(label).append(": ").append(value.equals("—")?"brak danych":value);
+            description.append(label).append(": ").append(value.equals("—")?"no data":value);
             rows.add(new Row(label,value));
         }
-        if(!live)description.append(", dane nieaktualne");
+        if(!live)description.append(", data is out of date");
         return new CardContent("","","",null,null,description.toString(),false,0,null,rows);
     }
     /** Numeric readings use the Polish decimal even without units; other states keep the tile's domain translations. */
@@ -155,13 +155,13 @@ final class CardBodies {
         String s=e.state,cls=e.attribute("device_class");
         switch(domain){
             case "cover":return coverState(s);
-            case "lock":switch(s){case "locked":return "Zamknięty";case "unlocked":return "Otwarty";case "locking":return "Zamykanie…";case "unlocking":return "Otwieranie…";case "jammed":return "Zablokowany";default:return s;}
+            case "lock":switch(s){case "locked":return "Locked";case "unlocked":return "Unlocked";case "locking":return "Closing…";case "unlocking":return "Opening…";case "jammed":return "Jammed";default:return s;}
             case "binary_sensor":
-                if(OPENINGS.contains(cls))return s.equals("on")?"Otwarte":s.equals("off")?"Zamknięte":s;
-                if(PRESENCE.contains(cls))return s.equals("on")?"Wykryto":s.equals("off")?"Brak":s;
-                return s.equals("on")?"Tak":s.equals("off")?"Nie":s;
+                if(OPENINGS.contains(cls))return s.equals("on")?"Open":s.equals("off")?"Closed":s;
+                if(PRESENCE.contains(cls))return s.equals("on")?"Detected":s.equals("off")?"None":s;
+                return s.equals("on")?"Yes":s.equals("off")?"No":s;
             default:
-                if(s.equals("on"))return "Włączone";if(s.equals("off"))return "Wyłączone";
+                if(s.equals("on"))return "On";if(s.equals("off"))return "Off";
                 String unit=e.attribute("unit_of_measurement");
                 return unit!=null?decimal(s,unit):s;
         }
@@ -175,15 +175,15 @@ final class CardBodies {
     }
     private static String entityLabel(String entity){
         String name=entity.substring(entity.indexOf('.')+1).replace('_',' ');
-        return name.substring(0,1).toUpperCase(new Locale("pl"))+name.substring(1);
+        return name.substring(0,1).toUpperCase(Locale.UK)+name.substring(1);
     }
     static String number(String raw,String unit){
         if(raw==null)return "—";
-        try{return String.format(new Locale("pl"),"%.0f%s",Double.parseDouble(raw),unit);}catch(NumberFormatException e){return raw+unit;}
+        try{return String.format(Locale.UK,"%.0f%s",Double.parseDouble(raw),unit);}catch(NumberFormatException e){return raw+unit;}
     }
     /** Up to one decimal, none when whole: "21,4 °C", "21 °C"; a non-number keeps its text and unit. */
     static String decimal(String raw,String unit){
-        try{double v=Double.parseDouble(raw);String s=String.format(new Locale("pl"),"%.1f",v);if(s.endsWith(",0"))s=s.substring(0,s.length()-2);return s+" "+unit;}
+        try{double v=Double.parseDouble(raw);String s=String.format(Locale.UK,"%.1f",v);if(s.endsWith(".0"))s=s.substring(0,s.length()-2);return s+" "+unit;}
         catch(NumberFormatException e){return raw+" "+unit;}
     }
     /** Measured temperature big, "Zadana 20,5°" under it; the icon says what the device is doing, amber only while it works (SPEC 0.19 pkt 4). */
@@ -191,8 +191,8 @@ final class CardBodies {
         EntityStates.Entity e=states.get(item.entity);ClimateModel m=new ClimateModel(e,false);
         String name=item.title!=null?item.title:e!=null&&e.attribute("friendly_name")!=null?e.attribute("friendly_name"):defaultLabel(item);
         String word=m.known?m.actionWord():null;
-        String spoken=name+": w pokoju "+(m.current==null||!m.known?"brak pomiaru":m.currentText().replace("°"," stopnia"))+", "+m.tileDetail().toLowerCase(new Locale("pl"))
-            +(word==null?"":", "+word.toLowerCase(new Locale("pl")))+(live?"":", dane nieaktualne");
+        String spoken=name+": room temperature "+(m.current==null||!m.known?"no reading":m.currentText().replace("°"," degrees"))+", "+m.tileDetail().toLowerCase(Locale.UK)
+            +(word==null?"":", "+word.toLowerCase(Locale.UK))+(live?"":", data is out of date");
         return new CardContent(m.currentText(),m.tileDetail(),"",name,item.ownIcon?null:m.icon(),spoken,m.known&&m.working(),0);
     }
     /** "1302 / 742 W" (production / house) where the title goes, the battery charge big under it; without a battery the pair is the value. */
@@ -202,7 +202,7 @@ final class CardBodies {
         // one unit at the end when both sensors share it, each its own otherwise
         String pair=pvUnit.equals(houseUnit)?number(pv,"")+" / "+number(house,"")+(pvUnit.isEmpty()?"":" "+pvUnit):number(pv,pvUnit)+" / "+number(house,houseUnit);
         String battery=item.batteryEntity==null?null:number(states.get(item.batteryEntity),unit(states.get(item.batteryEntity)));
-        String spoken=defaultLabel(item)+": produkcja "+number(pv,pvUnit)+", dom "+number(house,houseUnit)+(battery==null?"":", bateria "+battery)+(live?"":", dane nieaktualne");
+        String spoken=defaultLabel(item)+": generation "+number(pv,pvUnit)+", home "+number(house,houseUnit)+(battery==null?"":", battery "+battery)+(live?"":", data is out of date");
         if(item.batteryEntity==null)return new CardContent(pair,"","",null,null,spoken,false,0);
         CardContent c=new CardContent(battery,"","",pair,null,spoken,false,0);
         c.valueIcon=batteryIcon(states.get(item.batteryEntity));
@@ -222,6 +222,6 @@ final class CardBodies {
         return unit.isEmpty()?decimal(e.state,"").trim():decimal(e.state,unit);
     }
     static String coverState(String state){
-        switch(state){case "open":return "Otwarta";case "closed":return "Zamknięta";case "opening":return "Otwieranie…";case "closing":return "Zamykanie…";default:return state;}
+        switch(state){case "open":return "Open";case "closed":return "Closed";case "opening":return "Opening…";case "closing":return "Closing…";default:return state;}
     }
 }

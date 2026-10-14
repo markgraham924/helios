@@ -8,7 +8,7 @@ import org.json.*;
 final class ReleaseInfo {
     static final long MAX_BYTES=40L*1024*1024;
     /** The only metadata address; never redirected, never subject to the asset host policies. */
-    static final String API_URL="https://api.github.com/repos/SychPL/helios/releases/latest";
+    static final String API_URL="https://api.github.com/repos/markgraham924/helios/releases/latest";
 
     /**
      * Where a release comes from. Helios updates itself from one repository and can fetch the clock tools from
@@ -25,9 +25,9 @@ final class ReleaseInfo {
     }
 
     /** Helios itself: the source the updater has always used. */
-    static final Source HELIOS=new Source("SychPL/helios","helios-%s.apk","pl.mateusz.helios","Helios");
+    static final Source HELIOS=new Source("markgraham924/helios","helios-%s.apk","pl.mateusz.helios","Helios");
     /** The clock tools, fetched by the menu entry when they are missing (SPEC 0.12 pkt 6.2). */
-    static final Source TOOLS=new Source("SychPL/smartclock2tool","smartclock2tool-%s.apk","pl.mateusz.clockadbprobe","narzędzia zegara");
+    static final Source TOOLS=new Source("SychPL/smartclock2tool","smartclock2tool-%s.apk","pl.mateusz.clockadbprobe","clock tools");
     private static final Pattern TAG=Pattern.compile("^v([0-9]+\\.[0-9]+\\.[0-9]+)$");
     final String version,url;final long size;
     private ReleaseInfo(String version,String url,long size){this.version=version;this.url=url;this.size=size;}

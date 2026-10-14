@@ -48,17 +48,17 @@ final class Updater {
             HttpURLConnection c=(HttpURLConnection)new URL(url).openConnection();c.setConnectTimeout(10000);c.setReadTimeout(30000);c.setInstanceFollowRedirects(false);
             try{
                 int status=c.getResponseCode();
-                if(status/100==3){if(hop==5)break;String next=nextHop(c.getHeaderField("Location"),url,policy);if(next==null)throw new IOException("Przekierowanie poza GitHub");url=next;continue;}
+                if(status/100==3){if(hop==5)break;String next=nextHop(c.getHeaderField("Location"),url,policy);if(next==null)throw new IOException("Redirect outside GitHub");url=next;continue;}
                 if(status!=200)throw new IOException("HTTP "+status);
                 long total=0;byte[] buf=new byte[65536];
                 try(InputStream in=c.getInputStream();OutputStream out=new FileOutputStream(target)){
-                    int n;while((n=in.read(buf))!=-1){total+=n;if(total>maxBytes||(expected>0&&total>expected))throw new IOException("Plik większy niż zapowiedziany");out.write(buf,0,n);}
+                    int n;while((n=in.read(buf))!=-1){total+=n;if(total>maxBytes||(expected>0&&total>expected))throw new IOException("File is larger than expected");out.write(buf,0,n);}
                 }
-                if(expected>0&&total!=expected)throw new IOException("Niepełne pobranie");
+                if(expected>0&&total!=expected)throw new IOException("Incomplete download");
                 return;
             }finally{c.disconnect();}
         }
-        throw new IOException("Za dużo przekierowań");
+        throw new IOException("Too many redirects");
     }
 
     boolean busy(){
@@ -74,31 +74,31 @@ final class Updater {
      * version; another package is compared against whatever is installed, and "absent" means a first install.
      */
     void run(ReleaseInfo.Source source,String installedVersion){
-        if(busy()){host.status("Aktualizacja w toku…");return;}
-        if(!host.canInstall()){host.openInstallSettings();host.status("Zezwól Heliosowi na instalację, potem powtórz");return;}
+        if(busy()){host.status("Update in progress…");return;}
+        if(!host.canInstall()){host.openInstallSettings();host.status("Allow Helios to install apps, then try again");return;}
         JSONObject release;
-        try{release=host.release(source);}catch(IOException e){host.status("Brak połączenia z GitHub");return;}
+        try{release=host.release(source);}catch(IOException e){host.status("No connection to GitHub");return;}
         ReleaseInfo info=ReleaseInfo.parse(release,source);
-        if(info==null){host.status("Brak wydań");return;}
+        if(info==null){host.status("No releases");return;}
         String decision=decision(info.version,installedVersion);
-        if(!"newer".equals(decision)&&!"absent".equals(decision)){host.status("Masz najnowszą wersję ("+installedVersion+")");return;}
+        if(!"newer".equals(decision)&&!"absent".equals(decision)){host.status("You have the latest version ("+installedVersion+")");return;}
         active=true;
         byte[] rnd=new byte[8];new SecureRandom().nextBytes(rnd);StringBuilder id=new StringBuilder();for(byte b:rnd)id.append(String.format("%02x",b));
         File file=new File(host.cacheDir(),"update-"+id+".apk");
         JSONObject record;
         try{record=new JSONObject().put("id",id.toString()).put("started",System.currentTimeMillis()).put("file",file.getPath()).put("session",-1);}catch(Exception e){active=false;return;}
-        if(!host.saveRecord(record)){host.status("Nie udało się zapisać stanu aktualizacji");active=false;return;} // nothing else happened yet
-        host.status("Pobieram "+source.label+" "+info.version+"…");
+        if(!host.saveRecord(record)){host.status("Could not save update state");active=false;return;} // nothing else happened yet
+        host.status("Downloading "+source.label+" "+info.version+"…");
         int session=-1;
         try{
-            try{host.download(info.url,file,info.size);}catch(IOException e){fail(record,session,"Brak połączenia z GitHub");return;}
+            try{host.download(info.url,file,info.size);}catch(IOException e){fail(record,session,"No connection to GitHub");return;}
             String problem=host.check(file,info.version,source.expectedPackage);
             if(problem!=null&&!problem.equals("ok")){fail(record,session,problem);return;}
-            try{session=host.createSession(file.length(),source.expectedPackage);}catch(IOException e){fail(record,session,"Instalacja nieudana");return;}
+            try{session=host.createSession(file.length(),source.expectedPackage);}catch(IOException e){fail(record,session,"Installation failed");return;}
             try{record.put("session",session);}catch(Exception ignored){}
-            if(!host.saveRecord(record)){fail(record,session,"Nie udało się zapisać stanu aktualizacji");return;}
-            try{host.write(session,file);}catch(IOException e){fail(record,session,"Instalacja nieudana");return;}
-            try{host.commit(session,record.optString("id"),file);}catch(IOException e){fail(record,session,"Instalacja nieudana");return;}
+            if(!host.saveRecord(record)){fail(record,session,"Could not save update state");return;}
+            try{host.write(session,file);}catch(IOException e){fail(record,session,"Installation failed");return;}
+            try{host.commit(session,record.optString("id"),file);}catch(IOException e){fail(record,session,"Installation failed");return;}
             // committed: from here the installer owns the session; the durable record + sealed session keep busy() true
         }finally{active=false;}
     }
@@ -107,20 +107,20 @@ final class Updater {
      * bridge instead of the system installer, which is the whole point of a silent update.
      */
     File fetch(ReleaseInfo.Source source,String installedVersion){
-        if(busy()){host.status("Aktualizacja w toku…");return null;}
+        if(busy()){host.status("Update in progress…");return null;}
         JSONObject release;
-        try{release=host.release(source);}catch(IOException e){host.status("Brak połączenia z GitHub");return null;}
+        try{release=host.release(source);}catch(IOException e){host.status("No connection to GitHub");return null;}
         ReleaseInfo info=ReleaseInfo.parse(release,source);
-        if(info==null){host.status("Brak wydań");return null;}
+        if(info==null){host.status("No releases");return null;}
         String decision=decision(info.version,installedVersion);
-        if(!"newer".equals(decision)&&!"absent".equals(decision)){host.status("Masz najnowszą wersję ("+installedVersion+")");return null;}
+        if(!"newer".equals(decision)&&!"absent".equals(decision)){host.status("You have the latest version ("+installedVersion+")");return null;}
         // a name per download, not per version: two downloads may overlap, and one must not truncate the other
         byte[] rnd=new byte[8];new SecureRandom().nextBytes(rnd);StringBuilder tag=new StringBuilder();
         for(byte b:rnd)tag.append(String.format("%02x",b));
         File file=new File(host.cacheDir(),"silent-"+tag+".apk");
-        host.status("Pobieram "+source.label+" "+info.version+"…");
+        host.status("Downloading "+source.label+" "+info.version+"…");
         try{host.download(info.url,file,info.size);}
-        catch(IOException e){host.status("Brak połączenia z GitHub");host.deleteFile(file.getPath());return null;}
+        catch(IOException e){host.status("No connection to GitHub");host.deleteFile(file.getPath());return null;}
         String problem=host.check(file,info.version,source.expectedPackage);
         if(problem!=null&&!problem.equals("ok")){host.status(problem);host.deleteFile(file.getPath());return null;}
         return file;
@@ -133,7 +133,7 @@ final class Updater {
     }
     private void cleanup(JSONObject record){
         host.deleteFile(record.optString("file"));
-        if(!host.saveRecord(null))host.status("Nie udało się wyczyścić stanu aktualizacji"); // busy() may stay true until the next restore
+        if(!host.saveRecord(null))host.status("Could not clear update state"); // busy() may stay true until the next restore
     }
     /** Service start: a record without a sealed session can never finish; a sealed one is waited for. */
     void restore(){
@@ -153,7 +153,7 @@ final class Updater {
         JSONObject record=host.record();
         if(record==null||operation==null||!operation.equals(record.optString("id"))){if(file!=null)host.deleteFile(file);return;}
         if(status==PackageInstaller.STATUS_PENDING_USER_ACTION){if(confirm!=null)host.launch(confirm.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK));return;}
-        if(status!=PackageInstaller.STATUS_SUCCESS)host.status("Instalacja odrzucona: "+(message==null||message.isEmpty()?"status "+status:message));
+        if(status!=PackageInstaller.STATUS_SUCCESS)host.status("Installation rejected: "+(message==null||message.isEmpty()?"status "+status:message));
         cleanup(record);
     }
 
@@ -172,18 +172,18 @@ final class Updater {
             try{
                 if(c.getResponseCode()!=200)return null; // 404 = no releases yet, 3xx = refused
                 try(InputStream in=c.getInputStream();ByteArrayOutputStream bytes=new ByteArrayOutputStream()){
-                    byte[] chunk=new byte[8192];int n;while((n=in.read(chunk))!=-1){if(bytes.size()+n>262144)throw new IOException("Odpowiedź za duża");bytes.write(chunk,0,n);}
+                    byte[] chunk=new byte[8192];int n;while((n=in.read(chunk))!=-1){if(bytes.size()+n>262144)throw new IOException("Response too large");bytes.write(chunk,0,n);}
                     return new JSONObject(bytes.toString("UTF-8"));
                 }
-            }catch(org.json.JSONException e){throw new IOException("Nieprawidłowa odpowiedź GitHub");}
+            }catch(org.json.JSONException e){throw new IOException("Invalid GitHub response");}
             finally{c.disconnect();}
         }
         public void download(String url,File target,long expected) throws IOException {Updater.download(url,target,expected,ReleaseInfo::allowedHost);}
         public String check(File file,String version,String expectedPackage){
             android.content.pm.PackageInfo pi=context.getPackageManager().getPackageArchiveInfo(file.getPath(),0);
-            if(pi==null||!expectedPackage.equals(pi.packageName)||!version.equals(pi.versionName))return "Nieprawidłowy plik wydania";
+            if(pi==null||!expectedPackage.equals(pi.packageName)||!version.equals(pi.versionName))return "Invalid release file";
             // only our own update has to move forward; another package may be installed for the first time
-            if(context.getPackageName().equals(expectedPackage)&&pi.getLongVersionCode()<=BuildConfig.VERSION_CODE)return "Nieprawidłowy plik wydania";
+            if(context.getPackageName().equals(expectedPackage)&&pi.getLongVersionCode()<=BuildConfig.VERSION_CODE)return "Invalid release file";
             return "ok";
         }
         public int createSession(long size,String packageName) throws IOException {

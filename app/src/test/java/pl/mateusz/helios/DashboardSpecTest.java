@@ -11,12 +11,12 @@ public class DashboardSpecTest {
     }
     static JSONObject example() throws Exception {
         JSONArray items=new JSONArray()
-            .put(item("clock","clock",1,1,2,1).put("title","Dom"))
+            .put(item("clock","clock",1,1,2,1).put("title","Home"))
             .put(item("weather","weather",3,1,2,1).put("entity","weather.forecast_dom").put("temperature_entity","sensor.temperatura_salon"))
             .put(item("rain-info","entity",1,2,2,1).put("entity","sensor.helios_rain_message").put("icon","weather-rainy").put("visible_when",new JSONObject().put("entity","binary_sensor.helios_show_rain_daytime").put("state","on")))
             .put(item("living-room-light","light",3,2,1,1).put("entity","light.salon").put("tap_action",new JSONObject().put("action","toggle")))
             .put(item("living-room-cover","cover",4,2,1,1).put("entity","cover.roleta_salon"))
-            .put(item("garage","garage",1,3,4,1).put("entity","cover.brama_garazowa").put("title","Brama otwarta")
+            .put(item("garage","garage",1,3,4,1).put("entity","cover.brama_garazowa").put("title","Brama open")
                 .put("visible_when",new JSONObject().put("entity","binary_sensor.helios_show_open_garage_evening").put("state","on"))
                 .put("confirmation",new JSONObject().put("enabled",true).put("text","Zamknąć bramę garażową?")));
         return new JSONObject().put("version",2).put("grid",new JSONObject().put("columns",4).put("rows",3)).put("items",items);
@@ -78,10 +78,10 @@ public class DashboardSpecTest {
     /** SPEC 0.9 pkt 7.3: the three changed tiles plus the clock and four bottom notifications. */
     static JSONObject exampleV4() throws Exception {
         JSONArray items=new JSONArray()
-            .put(item("clock","clock",1,1,2,2).put("title","Dom"))
-            .put(item("weather","weather",3,1,2,1).put("entity","weather.forecast_dom").put("title","Pogoda").put("forecast_entity","sensor.helios_pogoda_jutro")
+            .put(item("clock","clock",1,1,2,2).put("title","Home"))
+            .put(item("weather","weather",3,1,2,1).put("entity","weather.forecast_dom").put("title","Weather").put("forecast_entity","sensor.helios_pogoda_jutro")
                 .put("forecast_when",new JSONObject().put("entity","binary_sensor.helios_pogoda_jutro_tryb").put("state","on")))
-            .put(item("bedroom-covers","cover_group",3,2,1,1).put("title","Rolety").put("covers",new JSONArray()
+            .put(item("bedroom-covers","cover_group",3,2,1,1).put("title","Blinds").put("covers",new JSONArray()
                 .put(new JSONObject().put("entity","cover.bedroom_main_cover_a").put("title","Roleta A"))
                 .put(new JSONObject().put("entity","cover.bedroom_main_cover_b").put("title","Roleta B"))))
             .put(item("bedroom-light","light",4,2,1,1).put("title","Światło sypialni").put("entity","light.bedroom_a_all")

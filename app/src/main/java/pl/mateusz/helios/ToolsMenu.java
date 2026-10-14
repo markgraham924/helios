@@ -11,18 +11,18 @@ import java.util.List;
  * a normal state rather than a warning.
  */
 final class ToolsMenu {
-    static final String INSTALL = "Zainstaluj narzędzia";
-    static final String ACCEPT = "Zaakceptuj narzędzia";
-    static final String UPDATE = "Zaktualizuj narzędzia";
-    static final String ROOT_AND_ADB = "Włącz root i ADB";
-    static final String ADB_ON = "Włącz ADB";
-    static final String ADB_OFF = "Wyłącz ADB";
-    static final String MIC_FIX = "Napraw mikrofon";
-    static final String MIC_RESTORE = "Przywróć mikrofon";
-    static final String PERMISSION_MIC = "Uprawnienie mikrofonu";
-    static final String ALLOW_BRIGHTNESS = "Pozwól na jasność";
-    static final String SET_HOME = "Ustaw jako ekran główny";
-    static final String SILENT_UPDATE = "Cicha aktualizacja Heliosa";
+    static final String INSTALL = "Install clock tools";
+    static final String ACCEPT = "Accept clock tools";
+    static final String UPDATE = "Update clock tools";
+    static final String ROOT_AND_ADB = "Enable root and ADB";
+    static final String ADB_ON = "Enable ADB";
+    static final String ADB_OFF = "Disable ADB";
+    static final String MIC_FIX = "Fix microphone";
+    static final String MIC_RESTORE = "Restore microphone";
+    static final String PERMISSION_MIC = "Microphone permission";
+    static final String ALLOW_BRIGHTNESS = "Allow brightness control";
+    static final String SET_HOME = "Set as home screen";
+    static final String SILENT_UPDATE = "Silent Helios update";
 
     private ToolsMenu() {}
 

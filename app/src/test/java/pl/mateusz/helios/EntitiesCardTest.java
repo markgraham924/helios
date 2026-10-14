@@ -46,34 +46,34 @@ public class EntitiesCardTest {
     }
     @Test public void requiresOneToThreeStrictEntryObjects() throws Exception {
         JSONObject absent=card(entry("sensor.x"));absent.remove("entries");
-        rejects(absent,"entities wymaga od 1 do 3 pozycji entries");
-        rejects(card(),"entities wymaga od 1 do 3 pozycji entries");
-        rejects(card(entry("sensor.a"),entry("sensor.b"),entry("sensor.c"),entry("sensor.d")),"entities wymaga od 1 do 3 pozycji entries");
-        rejects(card().put("entries",JSONObject.NULL),"entities wymaga od 1 do 3 pozycji entries");
-        rejects(card().put("entries",new JSONObject()),"entities wymaga od 1 do 3 pozycji entries");
-        rejects(card().put("entries",new JSONArray().put("sensor.x")),"entries: pozycja musi być obiektem");
-        rejects(card(new JSONObject()),"Wymagane pole entity");
-        rejects(card(entry("sensor.x").put("entity",JSONObject.NULL)),"Nieprawidłowe pole entity");
-        rejects(card(entry("sensor.x").put("entity",5)),"Nieprawidłowe pole entity");
+        rejects(absent,"entities requires 1 to 3 entries");
+        rejects(card(),"entities requires 1 to 3 entries");
+        rejects(card(entry("sensor.a"),entry("sensor.b"),entry("sensor.c"),entry("sensor.d")),"entities requires 1 to 3 entries");
+        rejects(card().put("entries",JSONObject.NULL),"entities requires 1 to 3 entries");
+        rejects(card().put("entries",new JSONObject()),"entities requires 1 to 3 entries");
+        rejects(card().put("entries",new JSONArray().put("sensor.x")),"entries: each entry must be an object");
+        rejects(card(new JSONObject()),"Required field entity");
+        rejects(card(entry("sensor.x").put("entity",JSONObject.NULL)),"Invalid field entity");
+        rejects(card(entry("sensor.x").put("entity",5)),"Invalid field entity");
         for(String entity:Arrays.asList("sensor.Bad","sensor.","sensor.x.extra","sensor space"," sensor.x"))
-            rejects(card(entry(entity)),"entries: nieprawidłowa encja "+entity);
-        rejects(card(entry("sensor."+String.join("",Collections.nCopies(122,"x")))),"Nieprawidłowe pole entity");
+            rejects(card(entry(entity)),"entries: invalid entity "+entity);
+        rejects(card(entry("sensor."+String.join("",Collections.nCopies(122,"x")))),"Invalid field entity");
         for(Object title:Arrays.asList("", "  ",JSONObject.NULL,3,String.join("",Collections.nCopies(41,"x"))))
-            rejects(card(entry("sensor.x").put("title",title)),"Nieprawidłowe pole title");
+            rejects(card(entry("sensor.x").put("title",title)),"Invalid field title");
         for(String key:Arrays.asList("icon","attribute","unit","tap_action","confirmation"))
-            rejects(card(entry("sensor.x").put(key,"ignored")),"Nieznane pole entries: "+key);
+            rejects(card(entry("sensor.x").put(key,"ignored")),"Unknown field entries: "+key);
     }
     @Test public void staysReadOnlyAndRequiresVersionSix() throws Exception {
-        rejects(card(entry("number.target")).put("tap_action",new JSONObject().put("action","details")),"Pole niedozwolone dla typu entities: tap_action");
-        rejects(card(entry("sensor.x")).put("confirmation",new JSONObject().put("enabled",true)),"Pole niedozwolone dla typu entities: confirmation");
-        rejects(card(entry("sensor.x")).put("entity","sensor.y"),"Pole niedozwolone dla typu entities: entity");
+        rejects(card(entry("number.target")).put("tap_action",new JSONObject().put("action","details")),"Field not allowed for type entities: tap_action");
+        rejects(card(entry("sensor.x")).put("confirmation",new JSONObject().put("enabled",true)),"Field not allowed for type entities: confirmation");
+        rejects(card(entry("sensor.x")).put("entity","sensor.y"),"Field not allowed for type entities: entity");
         JSONObject legacy=DashboardSpecTest.example().put("version",5);legacy.getJSONArray("items").put(card(entry("sensor.x")));
         try{DashboardSpec.parse(legacy);fail("entities accepted at version 5");}
-        catch(IllegalArgumentException expected){assertEquals("Typ entities wymaga version: 6",expected.getMessage());}
+        catch(IllegalArgumentException expected){assertEquals("Type entities requires version: 6",expected.getMessage());}
         JSONObject alerts=DashboardSpecV6Test.item("a","alerts",1,1,1,1).put("sources",new JSONArray().put(new JSONObject().put("title","Alarm").put("entity","sensor.warning").put("when",new JSONObject().put("entity","binary_sensor.warning").put("state","on"))));
         JSONObject empty=card(entry("sensor.x"));for(String key:Arrays.asList("id","column","row","width","height"))empty.remove(key);
         try{DashboardSpec.parse(doc(alerts.put("empty",empty)));fail("entities accepted as alerts.empty");}
-        catch(IllegalArgumentException expected){assertTrue(expected.getMessage().startsWith("empty: dozwolone typy "));}
+        catch(IllegalArgumentException expected){assertTrue(expected.getMessage().startsWith("empty: allowed types "));}
     }
     @Test public void showsOrderedNumericReadingsWithIndependentLabelsAndUnits() throws Exception {
         DashboardSpec.Item item=DashboardSpec.parse(doc(card(entry("sensor.temperature").put("title","Temperatura"),entry("sensor.humidity"),entry("sensor.co2")))).items.get(0);
@@ -83,10 +83,10 @@ public class EntitiesCardTest {
         states.put("sensor.co2",state("812.45"));
         CardBodies.CardContent content=render(item,states,true);
         assertEquals(3,content.rows.size());
-        assertEquals("Temperatura",content.rows.get(0).label);assertEquals("22,4 °C",content.rows.get(0).value);
+        assertEquals("Temperatura",content.rows.get(0).label);assertEquals("22.4 °C",content.rows.get(0).value);
         assertEquals("Wilgotność",content.rows.get(1).label);assertEquals("48 %",content.rows.get(1).value);
-        assertEquals("Co2",content.rows.get(2).label);assertEquals("812,5",content.rows.get(2).value);
-        assertEquals("Odczyty: Temperatura: 22,4 °C, Wilgotność: 48 %, Co2: 812,5",content.description);
+        assertEquals("Co2",content.rows.get(2).label);assertEquals("812.5",content.rows.get(2).value);
+        assertEquals("Readings: Temperatura: 22.4 °C, Wilgotność: 48 %, Co2: 812.5",content.description);
         assertFalse(content.accent);
     }
     @Test public void aMissingReadingKeepsItsOwnRowAndOfflineDescription() throws Exception {
@@ -95,16 +95,16 @@ public class EntitiesCardTest {
         states.put("sensor.temperature",state("21.5","unit_of_measurement","°C","friendly_name","Temperatura"));
         states.put("sensor.humidity",state("unavailable","friendly_name","Wilgotność"));
         CardBodies.CardContent content=render(item,states,false);
-        assertEquals(3,content.rows.size());assertEquals("21,5 °C",content.rows.get(0).value);
+        assertEquals(3,content.rows.size());assertEquals("21.5 °C",content.rows.get(0).value);
         assertEquals("Wilgotność",content.rows.get(1).label);assertEquals("—",content.rows.get(1).value);
         assertEquals("Next visit",content.rows.get(2).label);assertEquals("—",content.rows.get(2).value);
-        assertEquals("Pomiary: Temperatura: 21,5 °C, Wilgotność: brak danych, Next visit: brak danych, dane nieaktualne",content.description);
+        assertEquals("Pomiary: Temperatura: 21.5 °C, Wilgotność: no data, Next visit: no data, data is out of date",content.description);
         states.put("sensor.humidity",state("unknown","friendly_name",""));
         assertEquals("Humidity",render(item,states,true).rows.get(1).label);assertEquals("—",render(item,states,true).rows.get(1).value);
     }
     @Test public void formatsNumbersWithoutUnitsAndTranslatesOtherKnownStates() throws Exception {
-        String[][] readings={{"sensor.x","1.25","","1,3"},{"number.x","-1.25","","-1,3"},{"sensor.x","0.0","","0"},{"sensor.x","ready","","ready"},
-            {"sensor.x","NaN","W","NaN W"},{"sensor.x","Infinity","W","Infinity W"},{"switch.x","on","","Włączone"},{"cover.x","open","","Otwarta"},{"lock.x","locked","","Zamknięty"}};
+        String[][] readings={{"sensor.x","1.25","","1.3"},{"number.x","-1.25","","-1.3"},{"sensor.x","0.0","","0"},{"sensor.x","ready","","ready"},
+            {"sensor.x","NaN","W","NaN W"},{"sensor.x","Infinity","W","Infinity W"},{"switch.x","on","","On"},{"cover.x","open","","Open"},{"lock.x","locked","","Locked"}};
         for(String[] reading:readings){
             DashboardSpec.Item item=DashboardSpec.parse(doc(card(entry(reading[0])))).items.get(0);
             EntityStates.Entity entity=reading[2].isEmpty()?state(reading[1]):state(reading[1],"unit_of_measurement",reading[2]);
@@ -113,7 +113,7 @@ public class EntitiesCardTest {
         DashboardSpec.Item item=DashboardSpec.parse(doc(card(entry("binary_sensor.door"),entry("binary_sensor.motion"),entry("binary_sensor.other")))).items.get(0);
         Map<String,EntityStates.Entity> states=new HashMap<>();states.put("binary_sensor.door",state("on","device_class","door"));states.put("binary_sensor.motion",state("off","device_class","motion"));states.put("binary_sensor.other",state("off"));
         CardBodies.CardContent content=render(item,states,true);
-        assertEquals("Otwarte",content.rows.get(0).value);assertEquals("Brak",content.rows.get(1).value);assertEquals("Nie",content.rows.get(2).value);
+        assertEquals("Open",content.rows.get(0).value);assertEquals("None",content.rows.get(1).value);assertEquals("No",content.rows.get(2).value);
     }
     @Test public void consumesLiveSnapshotChangesAndKeepsDuplicateRowsWhileDeduplicatingSubscriptions() throws Exception {
         DashboardSpec spec=DashboardSpec.parse(doc(card(entry("sensor.x"),entry("sensor.x").put("title","Powtórzony"))));
@@ -122,7 +122,7 @@ public class EntitiesCardTest {
         states.apply(new JSONObject("{\"a\":{\"sensor.x\":{\"s\":\"22.2\",\"a\":{\"friendly_name\":\"Pokój\",\"unit_of_measurement\":\"°C\",\"unneeded\":\"discarded\"}}}}"));
         CardBodies.CardContent content=render(spec.items.get(0),states.snapshot(),true);
         assertEquals(2,content.rows.size());assertEquals("Pokój",content.rows.get(0).label);assertEquals("Powtórzony",content.rows.get(1).label);
-        assertEquals("22,2 °C",content.rows.get(1).value);
+        assertEquals("22.2 °C",content.rows.get(1).value);
         assertNull(states.snapshot().get("sensor.x").attribute("unneeded"));
         states.apply(new JSONObject("{\"c\":{\"sensor.x\":{\"+\":{\"s\":\"23\",\"a\":{\"friendly_name\":\"Salon\"}}}}}"));
         content=render(spec.items.get(0),states.snapshot(),true);

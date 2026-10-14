@@ -1,5 +1,21 @@
 # Helios - a Home Assistant face for the Lenovo Smart Clock 2
 
+## English interface fork
+
+This fork translates the clock's interface into English, including menus,
+accessibility labels, validation messages, entity states and UK date formatting.
+It retains the original package ID, Home Assistant protocol and native Spotify
+compatibility. The in-app Helios updater checks `markgraham924/helios`.
+The matching English Home Assistant editor is at
+[markgraham924/ha-helios](https://github.com/markgraham924/ha-helios/tree/english-ui).
+Historical Polish documentation and example household configurations are retained
+for reference; they are not part of the clock interface.
+
+The APK is signed by this fork, so an existing upstream-signed installation needs
+its private data backed up and restored when switching builds. Future updates
+built with the same local signing key can be installed in place. Never commit
+signing keys, pairing tokens or device backups.
+
 Helios turns a Lenovo Smart Clock 2 into a Home Assistant wall panel: a 4x3
 dashboard configured entirely from Home Assistant, local "Okay Nabu" wake word
 into the HA Assist pipeline, and the clock as a Music Assistant player.
