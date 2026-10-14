@@ -57,6 +57,7 @@ final class CardBodies {
             return new CardContent(text,"",null,known&&e.state.equals("on"),0,item,live);
         });
         m.put("energy",CardBodies::energy);
+        m.put("predbat",CardBodies::predbat);
         m.put("spotify",(item,states,live,env)->new CardContent("Open","",null,true,0,item,true));
         m.put("assistant",(item,states,live,env)->{
             EntityStates.Entity e=states.get(item.entity);
@@ -133,6 +134,27 @@ final class CardBodies {
         return new CardContent(text,"",label,icon,known&&ACTIVE.contains(e.state),0,item,live);
     }
     /** One to three independent readings, with the card header and complete spoken labels even when some values are missing. */
+    /** Active execution detail belongs to this status, unlike the next planned charge/export limit. */
+    private static CardContent predbat(DashboardSpec.Item item,Map<String,EntityStates.Entity> states,boolean live,Env env){
+        EntityStates.Entity e=states.get(item.entity);
+        if(e==null||!e.known())return new CardContent("No data","",null,false,0,item,live);
+        String status=e.state,detail=e.attribute("detail");
+        if(detail==null)detail="";
+        detail=detail.trim();
+        // A single-inverter execution publishes e.g. "target 23%-100%". Keep richer fleet/warning text intact.
+        if(detail.matches("target \\d+(\\.\\d+)?%-\\d+(\\.\\d+)?%"))
+            detail=detail.substring(7).replace("%-","% → ");
+        String value=status;
+        switch(status){
+            case "Demand":if(detail.isEmpty())detail="Normal self-use";break;
+            case "Hold charging":value="Charge hold";break;
+            case "Hold exporting":value="Export hold";break;
+            case "Freeze charging":value="Charge freeze";break;
+            case "Freeze exporting":value="Export freeze";break;
+        }
+        return new CardContent(value,detail,null,status.equals("Charging")||status.equals("Exporting"),0,item,live);
+    }
+
     private static CardContent entities(DashboardSpec.Item item,Map<String,EntityStates.Entity> states,boolean live,Env env){
         List<Row> rows=new ArrayList<>();StringBuilder description=new StringBuilder(defaultLabel(item)).append(": ");
         for(DashboardSpec.Entry entry:item.entries){
