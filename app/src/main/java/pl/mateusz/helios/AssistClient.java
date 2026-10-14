@@ -179,15 +179,25 @@ public final class AssistClient {
     private void play(String url) throws Exception {
         if(closed)throw new IOException("Cancelled");
         MediaPlayer player=new MediaPlayer();AtomicBoolean finished=new AtomicBoolean(),failed=new AtomicBoolean();
+        SpeechPlaybackWatchdog watchdog=new SpeechPlaybackWatchdog(SystemClock.elapsedRealtime());
         try{
             player.setAudioAttributes(new AudioAttributes.Builder().setUsage(AudioAttributes.USAGE_ASSISTANT).setContentType(AudioAttributes.CONTENT_TYPE_SPEECH).build());
-            player.setOnPreparedListener(p->{if(!closed){p.start();log("playback_started","");}});
+            player.setOnPreparedListener(p->{if(!closed){
+                int duration=p.getDuration();p.start();watchdog.started(SystemClock.elapsedRealtime(),duration);
+                log("playback_started","duration_ms="+duration);
+            }});
             player.setOnCompletionListener(p->finished.set(true));
-            player.setOnErrorListener((p,what,extra)->{failed.set(true);finished.set(true);return true;});
+            player.setOnErrorListener((p,what,extra)->{log("playback_error","what="+what+" extra="+extra);failed.set(true);finished.set(true);return true;});
             player.setDataSource(url);player.prepareAsync();state("Responding…");
-            long deadline=SystemClock.elapsedRealtime()+30000;
-            while(!closed&&!finished.get()&&SystemClock.elapsedRealtime()<deadline)SystemClock.sleep(50);
-            if(closed||failed.get()||!finished.get())throw new IOException("Playback failed or cancelled");
+            while(!closed&&!finished.get()){
+                long now=SystemClock.elapsedRealtime();
+                if(watchdog.isStarted())watchdog.progress(now,player.getCurrentPosition());
+                String timeout=watchdog.timeout(now);
+                if(timeout!=null){log("playback_timeout",timeout);throw new IOException(timeout);}
+                SystemClock.sleep(100);
+            }
+            if(closed)throw new IOException("Playback cancelled");
+            if(failed.get())throw new IOException("Audio player failed");
             log("playback_completed","");
         }finally{player.release();}
     }

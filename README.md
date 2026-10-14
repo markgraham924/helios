@@ -168,3 +168,5 @@ The English fork supports a read-only `predbat` card with an entity such as `pre
 For this rooted Lenovo Smart Clock 2, `tools/lenovo-spotify-toggle.sh` is installed separately as a Magisk boot service. Physical Volume+ toggles native Spotify and Helios on release; remove any competing Volume+ remap. This script assumes this clock's `/dev/input/event3`; it is not a general Android key mapping. Volume- remains the existing volume-down mapping. Remove the service file and stop its process to undo it.
 
 Titleless wide 2×1 clock cards use a large time beside a two-line date inside the same card. Taller or titled clock cards keep the existing stacked layout.
+
+Speech playback no longer has a fixed 30-second cutoff. Preparation has a 30-second timeout, playback allows the actual audio duration plus 60 seconds, and playback with no progress for 45 seconds fails explicitly. Unknown-duration streams have a ten-minute ceiling. Player errors and timeout reasons are logged without audio URLs.
