@@ -2,6 +2,16 @@
 
 ## English interface fork
 
+### Office shortcuts (0.19.2)
+
+The English fork adds two fixed local card types to schema 6: `spotify` opens
+the installed native Spotify app in one tap, and `assistant` starts the clock's
+existing Assist pipeline while displaying its selected voice-state sensor.
+Neither card accepts arbitrary application packages or Home Assistant services.
+Use the matching English dashboard editor 0.17.2 or later. The clock also
+forwards an early light-sensor reading when its service finishes binding, so
+Home Assistant does not wait for the room brightness to change.
+
 This fork translates the clock's interface into English, including menus,
 accessibility labels, validation messages, entity states and UK date formatting.
 It retains the original package ID, Home Assistant protocol and native Spotify

@@ -57,6 +57,12 @@ final class CardBodies {
             return new CardContent(text,"",null,known&&e.state.equals("on"),0,item,live);
         });
         m.put("energy",CardBodies::energy);
+        m.put("spotify",(item,states,live,env)->new CardContent("Open","",null,true,0,item,true));
+        m.put("assistant",(item,states,live,env)->{
+            EntityStates.Entity e=states.get(item.entity);
+            String text=e==null||!e.known()||e.state.equals("idle")?"Talk":e.state;
+            return new CardContent(text,"",null,false,0,item,live);
+        });
         m.put("climate",CardBodies::climate);
         m.put("cover",CardBodies::cover);
         m.put("garage",CardBodies::cover);

@@ -79,6 +79,7 @@ public final class MainActivity extends Activity implements AssistClient.Listene
     private final ServiceConnection serviceConnection=new ServiceConnection(){
         @Override public void onServiceConnected(ComponentName name,IBinder binder){
             service=((HeliosService.Local)binder).service();
+            if(screensaver.luxKnown())service.setLux(screensaver.lux());
             service.setOnDeviceLost(()->{if(voice!=null)voice.cancelFollowUp();});
             service.setDiagnostics(MainActivity.this::onEvent);
             service.setAppearanceListener((appearance,background)->{
@@ -370,6 +371,12 @@ public final class MainActivity extends Activity implements AssistClient.Listene
     }
     private void tap(DashboardSpec.Item item){
         ActionPolicy.Panel panel=ActionPolicy.panel(item.action);
+        if(panel==ActionPolicy.Panel.SPOTIFY){
+            android.content.Intent launch=getPackageManager().getLaunchIntentForPackage("com.spotify.music");
+            if(launch==null){Toast.makeText(this,"Spotify is not installed",Toast.LENGTH_SHORT).show();return;}
+            startActivity(launch);return;
+        }
+        if(panel==ActionPolicy.Panel.ASSISTANT){wakePanel();startVoice();return;}
         if(panel==ActionPolicy.Panel.MUSIC_LIBRARY){openMusicLibrary();return;} // library and remote control depend on MA, not on HA
         if(panel==ActionPolicy.Panel.ALERTS){alertsDrawer(item);return;} // offline the list still opens: every row then says it has no data
         if(!live||ha()==null){Toast.makeText(this,"No connection to Home Assistant",Toast.LENGTH_SHORT).show();return;}

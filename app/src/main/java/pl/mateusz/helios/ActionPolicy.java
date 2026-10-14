@@ -7,7 +7,7 @@ import java.util.*;
  * target is always the tile's own entity (SPEC 0.5 pkt 11.4, redrawn for version 6 in docs/ha-dashboard.md). Pure.
  */
 final class ActionPolicy {
-    enum Panel {COVER,COVER_GROUP,MUSIC_LIBRARY,DETAILS,CLIMATE,ALERTS}
+    enum Panel {COVER,COVER_GROUP,MUSIC_LIBRARY,DETAILS,CLIMATE,ALERTS,SPOTIFY,ASSISTANT}
     /** What a `tile` may do on tap; `Item.action` stores the lower-case name. Legacy types keep their own action words. */
     enum Intent {NONE,TOGGLE,TURN_ON,TURN_OFF,OPEN,CLOSE,STOP,CONTROLS,DETAILS,ACTIVATE,LOCK,UNLOCK}
     /** One hard-coded service on one entity, asked about with `question` when the item wants a confirmation. */
@@ -87,6 +87,8 @@ final class ActionPolicy {
     /** Actions that open a panel instead of calling a service; null otherwise. */
     static Panel panel(String action){
         if(action==null)return null;
+        if(action.equals("spotify"))return Panel.SPOTIFY;
+        if(action.equals("assistant"))return Panel.ASSISTANT;
         switch(action){case "controls":return Panel.COVER;case "covers":return Panel.COVER_GROUP;case "library":return Panel.MUSIC_LIBRARY;case "details":return Panel.DETAILS;case "climate":return Panel.CLIMATE;case "alerts":return Panel.ALERTS;default:return null;}
     }
     /** The service call an item's action stands for; null when the action opens a panel or the item is not tappable. */
