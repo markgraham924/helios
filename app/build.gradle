@@ -8,8 +8,8 @@ android {
         applicationId 'pl.mateusz.helios'
         minSdk 29
         targetSdk 29
-        versionCode 50
-        versionName '0.19.5'
+        versionCode 51
+        versionName '0.19.6'
     }
     testOptions { unitTests.returnDefaultValues = true } // android.content.Intent in the JVM updater tests
     lint { disable 'ExpiredTargetSdkVersion' } // a sideloaded launcher for one Android 10 device, never Google Play; targetSdk stays 29 on purpose
@@ -19,6 +19,7 @@ android {
 }
 
 dependencies {
+    implementation 'com.github.gkonovalov.android-vad:webrtc:2.0.10'
     implementation 'org.java-websocket:Java-WebSocket:1.6.0'
     implementation 'org.slf4j:slf4j-api:2.0.13'
     implementation 'org.slf4j:slf4j-nop:2.0.13'
