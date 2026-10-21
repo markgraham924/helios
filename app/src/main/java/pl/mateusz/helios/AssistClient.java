@@ -9,8 +9,10 @@ import java.io.*;
 import java.net.*;
 import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicReference;
 import java.util.Objects;
 import java.util.function.Supplier;
+import java.util.function.BooleanSupplier;
 
 /** One user-triggered Assist session; audio is never captured while idle. */
 public final class AssistClient {
@@ -53,10 +55,12 @@ public final class AssistClient {
         int handler=-1;
         boolean sttReady, vadStarted, audioDone, sttDone, ended, continueConversation;
         String ttsUrl, conversationId;
+        final StreamingReplyState reply=new StreamingReplyState();
         void accept(JSONObject message) throws Exception {
             if(message.optString("type").equals("result")&&!message.optBoolean("success"))throw new IOException("Pipeline rejected");
             JSONObject event=message.optJSONObject("event");if(event==null)return;
             String type=event.getString("type");JSONObject data=event.optJSONObject("data");
+            reply.accept(type,data);
             if(type.equals("error")){
                 // The code alone ("stt-stream-failed") never says why; the message carries the reason and is the only trace we get of a remote failure.
                 String reason=data==null?"Pipeline error":(data.optString("code","Pipeline error")+" "+data.optString("message","")).trim();
@@ -122,7 +126,8 @@ public final class AssistClient {
     private final AudioManager.OnAudioFocusChangeListener focus=change->{};
     /** Returns the run's events after playback, or null when a follow-up window passed without speech. */
     private Events runOnce(Socket socket,URI base,int run,String conversationId,long followUp,ToneGenerator tone,String device) throws Exception {
-        AudioRecord recorder=null;long sampleCount=0;double sumSq=0;finishAudio=false;
+        AudioRecord recorder=null;ClockSpeechEndpoint endpoint=null;Playback playback=null;
+        long sampleCount=0;double sumSq=0;finishAudio=false;
         try{
             JSONObject request=new JSONObject().put("id",run).put("type","assist_pipeline/run").put("pipeline",config.getString("pipeline"))
                     .put("start_stage","stt").put("end_stage","tts").put("timeout",60).put("input",new JSONObject().put("sample_rate",16000));
@@ -137,6 +142,13 @@ public final class AssistClient {
             if(ctx.checkSelfPermission(android.Manifest.permission.RECORD_AUDIO)!=android.content.pm.PackageManager.PERMISSION_GRANTED)throw new IOException("Microphone permission required");
             // VOICE_RECOGNITION (6): the same source as the wake listener; VOICE_COMMUNICATION's AEC chain made the flood jitter (86-95 k/s), which breaks factor calibration.
             recorder=new AudioRecord(6,16000,AudioFormat.CHANNEL_IN_MONO,AudioFormat.ENCODING_PCM_16BIT,Math.max(16384,min*4));
+            // Load the native detector BEFORE opening capture: first-use library loading must not
+            // build a mic backlog or distort the decimator's initial sample-rate calibration.
+            int silenceMs=ctx.getSharedPreferences("helios",Context.MODE_PRIVATE).getInt("voice_finish_silence_ms",0);
+            if(silenceMs==300||silenceMs==450){
+                try{endpoint=new ClockSpeechEndpoint(silenceMs);log("local_endpoint_enabled","silence_ms="+silenceMs);}
+                catch(RuntimeException|LinkageError error){log("local_endpoint_fallback",error.getClass().getSimpleName());}
+            }
             if(tone!=null){tone.startTone(ToneGenerator.TONE_PROP_BEEP,120);SystemClock.sleep(150);}
             recorder.startRecording();log("microphone_started","source=6 rate=16000 mono PCM16 gain=1 run="+run);state(followUp>0?"Still listening…":"Speak now\nWhat time is it?");
             // Same HAL sample flood as the wake listener: decimate the measured factor back to 16 kHz before sending to HA's STT
@@ -158,6 +170,13 @@ public final class AssistClient {
                     byte[] packet=new byte[out*2+1];packet[0]=(byte)events.handler;
                     for(int i=0;i<out;i++){int value=pcm[i];sumSq+=(double)value*value;packet[1+i*2]=(byte)value;packet[2+i*2]=(byte)(value>>8);}
                     sampleCount+=out;socket.send(packet);
+                    if(endpoint!=null){
+                        try{if(endpoint.accept(pcm,out,events.vadStarted)){
+                            finishAudio=true;log("local_endpoint","silence_ms="+silenceMs+" samples="+sampleCount);break;
+                        }}catch(RuntimeException error){
+                            endpoint.close();endpoint=null;log("local_endpoint_fallback",error.getClass().getSimpleName());
+                        }
+                    }
                 }
                 if(n==0&&out==0)SystemClock.sleep(5);
                 if(SystemClock.elapsedRealtime()>=nextPulse){log("capture_progress","samples="+sampleCount+" decim="+decimator.factor());nextPulse=SystemClock.elapsedRealtime()+1000;}
@@ -168,35 +187,72 @@ public final class AssistClient {
             if(quiet){log("follow_up_quiet","run="+run);return null;}
             if(!events.sttDone&&!events.ended)socket.send(new byte[]{(byte)events.handler});
             state("Waiting for a response…");long responseDeadline=SystemClock.elapsedRealtime()+45000;
-            while(!events.ended)events.accept(socket.next(responseDeadline));
-            if(events.ttsUrl==null)throw new IOException("No TTS response");
-            play(base.resolve(events.ttsUrl).toString());
+            // Capture has been released. Drain HA events while MediaPlayer consumes the live stream.
+            // Follow-up recording starts only after BOTH pipeline completion and playback completion.
+            while(true){
+                if(playback==null){
+                    String url=events.reply.claimUrl();
+                    if(url!=null){playback=new Playback(base.resolve(url).toString());log("playback_requested","before_run_end="+!events.ended);}
+                }
+                if(playback!=null)playback.check();
+                if(events.ended&&(playback==null||playback.done.get()))break;
+                if(closed)throw new IOException("Cancelled");
+                if(!events.ended){
+                    if(socket.failed)throw new IOException("HA disconnected");
+                    if(SystemClock.elapsedRealtime()>=responseDeadline)throw new IOException("HA response timed out");
+                    JSONObject message=socket.messages.poll(50,TimeUnit.MILLISECONDS);
+                    if(message!=null)events.accept(message);
+                }else SystemClock.sleep(25);
+            }
+            if(playback==null)throw new IOException("No TTS response");
+            playback.check(); // also catch a failure published immediately before done became true
             return events;
         }finally{
+            if(playback!=null)playback.close();
+            if(endpoint!=null)endpoint.close();
             if(recorder!=null){try{recorder.stop();}catch(Exception ignored){}recorder.release();log("microphone_released","cleanup");}
         }
     }
-    private void play(String url) throws Exception {
+    private final class Playback implements AutoCloseable {
+        final AtomicBoolean done=new AtomicBoolean(),cancelled=new AtomicBoolean();
+        final AtomicReference<Exception> failure=new AtomicReference<>();
+        final Thread worker;
+        Playback(String url){
+            worker=new Thread(()->{
+                try{play(url,cancelled::get);}catch(Exception error){failure.set(error);}finally{done.set(true);}
+            },"helios-speech-playback");worker.start();
+        }
+        void check() throws Exception{Exception error=failure.get();if(error!=null)throw error;}
+        public void close(){
+            cancelled.set(true);worker.interrupt();
+            try{worker.join(1500);}catch(InterruptedException error){Thread.currentThread().interrupt();}
+        }
+    }
+    private void play(String url,BooleanSupplier cancelled) throws Exception {
         if(closed)throw new IOException("Cancelled");
         MediaPlayer player=new MediaPlayer();AtomicBoolean finished=new AtomicBoolean(),failed=new AtomicBoolean();
         SpeechPlaybackWatchdog watchdog=new SpeechPlaybackWatchdog(SystemClock.elapsedRealtime());
         try{
             player.setAudioAttributes(new AudioAttributes.Builder().setUsage(AudioAttributes.USAGE_ASSISTANT).setContentType(AudioAttributes.CONTENT_TYPE_SPEECH).build());
-            player.setOnPreparedListener(p->{if(!closed){
-                int duration=p.getDuration();p.start();watchdog.started(SystemClock.elapsedRealtime(),duration);
-                log("playback_started","duration_ms="+duration);
+            player.setOnPreparedListener(p->{if(!closed&&!cancelled.getAsBoolean()){
+                try{
+                    int duration=p.getDuration();p.start();watchdog.started(SystemClock.elapsedRealtime(),duration);
+                    log("playback_started","duration_ms="+duration);
+                }catch(RuntimeException error){
+                    log("playback_error",error.getClass().getSimpleName());failed.set(true);finished.set(true);
+                }
             }});
             player.setOnCompletionListener(p->finished.set(true));
             player.setOnErrorListener((p,what,extra)->{log("playback_error","what="+what+" extra="+extra);failed.set(true);finished.set(true);return true;});
             player.setDataSource(url);player.prepareAsync();state("Responding…");
-            while(!closed&&!finished.get()){
+            while(!closed&&!cancelled.getAsBoolean()&&!finished.get()){
                 long now=SystemClock.elapsedRealtime();
                 if(watchdog.isStarted())watchdog.progress(now,player.getCurrentPosition());
                 String timeout=watchdog.timeout(now);
                 if(timeout!=null){log("playback_timeout",timeout);throw new IOException(timeout);}
                 SystemClock.sleep(100);
             }
-            if(closed)throw new IOException("Playback cancelled");
+            if(closed||cancelled.getAsBoolean())throw new IOException("Playback cancelled");
             if(failed.get())throw new IOException("Audio player failed");
             log("playback_completed","");
         }finally{player.release();}

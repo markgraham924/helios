@@ -50,6 +50,12 @@ final class NavigationMenu {
         diagnostics.setText("Helios "+BuildConfig.VERSION_NAME+"\nHA: "+(cfg==null?"not paired":cfg.optString("url",""))+"\n"+status);rows.addView(diagnostics);
         button(rows,"Talk to Nabu",()->{close();actions.talk();});
         button(rows,"Cancel conversation",()->{close();actions.cancel();});
+        Button endpoint=button(rows,endpointLabel(),()->{});
+        endpoint.setOnClickListener(v->{
+            android.content.SharedPreferences prefs=activity.getSharedPreferences("helios",Activity.MODE_PRIVATE);
+            int old=prefs.getInt("voice_finish_silence_ms",0),next=old==0?450:old==450?300:0;
+            prefs.edit().putInt("voice_finish_silence_ms",next).apply();endpoint.setText(endpointLabel());
+        });
         button(rows,"Device: volume and light",()->{close();actions.device();});
         button(rows,"Pair with HA",()->{close();actions.pair();});
         button(rows,"Clock tools",()->{close();actions.tools();});
@@ -76,6 +82,10 @@ final class NavigationMenu {
     }
     /** Connection diagnostics shown inside the menu; safe to call at any time. */
     void status(String text){status=text==null?"":text;}
+    private String endpointLabel(){
+        int ms=activity.getSharedPreferences("helios",Activity.MODE_PRIVATE).getInt("voice_finish_silence_ms",0);
+        return "Finish speaking: "+(ms==300?"fast (300 ms)":ms==450?"balanced (450 ms)":"HA default");
+    }
     private Button button(LinearLayout parent,String label,Runnable action){
         Button b=Theme.button(activity,label,false,dp(16),dp(Theme.RADIUS));
         b.setGravity(Gravity.START|Gravity.CENTER_VERTICAL);b.setPadding(dp(16),0,dp(12),0);

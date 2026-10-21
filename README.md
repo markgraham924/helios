@@ -2,6 +2,24 @@
 
 ## English interface fork
 
+### Streamed voice replies (0.19.6)
+
+Assist starts the TTS stream after HA's `tts_start_streaming` signal instead of
+waiting for `run-end`. Playback runs while pipeline events continue to be read;
+the microphone is released first and follow-up capture waits for both completion
+events. Short/non-streaming replies retain the final TTS URL fallback.
+
+The clock menu has **Finish speaking** options: HA default, balanced (450 ms),
+and fast (300 ms). The latter two use local WebRTC VAD on the existing decimated
+16-kHz command audio, require confirmed speech and at least a one-second command,
+and send HA's normal end-of-audio marker. HA's own VAD remains enabled as a
+fallback. No audio is stored by the detector. New installations keep HA default;
+the front-bedroom trial is configured locally to 300 ms. Shorter silence can cut
+natural pauses: return to balanced or HA default in the clock menu if needed.
+This app change requires no Home Assistant restart or integration update.
+
+Third-party speech-detector notices are bundled under `assets/licenses/`.
+
 ### Office shortcuts (0.19.2)
 
 The English fork adds two fixed local card types to schema 6: `spotify` opens
